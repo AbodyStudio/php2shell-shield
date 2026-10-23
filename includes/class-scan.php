@@ -58,6 +58,24 @@ class P2S_Scan {
 	}
 
 	/**
+	 * Keep only real core files from a checksum map — drop the bundled
+	 * wp-content/* entries (default plugins and themes) that legitimately differ.
+	 *
+	 * @param array $map file => hash.
+	 * @return array
+	 */
+	public function core_only( $map ) {
+		$out = array();
+		foreach ( (array) $map as $file => $hash ) {
+			if ( 0 === strpos( $file, 'wp-content/' ) ) {
+				continue;
+			}
+			$out[ $file ] = $hash;
+		}
+		return $out;
+	}
+
+	/**
 	 * Parse the plugin checksums API response into file => sha256.
 	 *
 	 * @param string $json Response body.
@@ -207,6 +225,12 @@ class P2S_Scan {
 		if ( null === $map ) {
 			return array( 'ok' => false, 'reason' => 'no_checksums' );
 		}
+		// WordPress.org core checksums include the bundled default plugins
+		// (Hello Dolly, Akismet) and themes. Those legitimately change — users
+		// delete Hello Dolly and Akismet/default themes update on their own — so
+		// comparing them here causes false positives. They are covered by the
+		// separate plugin/theme checks; keep this to real core files only.
+		$map = $this->core_only( $map );
 		$cmp = $this->compare_md5( $map, $this->base );
 		return array(
 			'ok'       => true,

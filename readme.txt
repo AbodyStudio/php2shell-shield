@@ -4,7 +4,7 @@ Tags: security, php2shell, hardening, vulnerability, cve
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,9 @@ support@abodystudio.com or abodystudio@gmail.com, or open an issue at
 https://github.com/AbodyStudio/php2shell-shield/issues .
 
 == Changelog ==
+
+= 1.3.1 =
+* Fix: the breach check no longer flags the bundled default add-ons (Hello Dolly, Akismet) as "core files differ". WordPress.org core checksums include those, but they legitimately change (you may delete Hello Dolly, and Akismet updates on its own), so the core check now looks at real core files only. Akismet is still verified by the separate plugin check.
 
 = 1.3.0 =
 * New "Upgrade PHP" tools — the real fix, made easy:
