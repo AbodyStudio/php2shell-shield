@@ -47,6 +47,14 @@ php tools/sign-pack.php packs/php2shell.pack.json keys/p2s-private.pem
 
 The comparison/parse/transform logic is covered by standalone PHP tests (run on any PHP ≥ 5.6). The WordPress glue (admin screens, `get_users`, plugin deactivation, live `.htaccess`/`wp-config.php`/Cloudflare writes) should be verified on a throwaway test site.
 
+## Author & support
+
+Built by **[AbodyStudio](https://abodystudio.com)**.
+
+- Website: https://abodystudio.com
+- Support: support@abodystudio.com · abodystudio@gmail.com
+- Issues & security reports: https://github.com/AbodyStudio/php2shell-shield/issues
+
 ## License
 
 GPL-2.0-or-later. See [LICENSE](LICENSE).

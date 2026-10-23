@@ -86,6 +86,14 @@ Yes. Server-level IP rules see Cloudflare's IPs, not your visitors', so the
 .htaccess lockdown may be unreliable behind Cloudflare. Use the Cloudflare
 options instead; the plugin warns you about this.
 
+== Support ==
+
+By AbodyStudio — https://abodystudio.com
+
+Questions, bug reports, or a vulnerability to report? Email
+support@abodystudio.com or abodystudio@gmail.com, or open an issue at
+https://github.com/AbodyStudio/php2shell-shield/issues .
+
 == Changelog ==
 
 = 1.0.0 =

@@ -1,12 +1,13 @@
 <?php
 /**
  * Plugin Name:       PHP2Shell Shield
- * Plugin URI:        https://github.com/abodystudio/php2shell-shield
+ * Plugin URI:        https://github.com/AbodyStudio/php2shell-shield
  * Description:        Reduces the risk of the PHP2Shell exploit (CVE-2026-109618 / CVE-2026-109619) on sites that cannot update PHP yet. A shield, not a cure — the only real fix is updating PHP.
  * Version:           1.0.0
  * Requires at least: 5.0
  * Requires PHP:      5.4
  * Author:            AbodyStudio
+ * Author URI:        https://abodystudio.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       php2shell-shield
