@@ -30,6 +30,11 @@
 
 > **This is a shield, not a cure.** The only real fix for PHP2Shell is updating PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). This plugin is for the gap until then — it lowers risk, tells you if you were already hit, and gives you an emergency switch. It cannot make an unpatched server perfectly safe.
 
+<p align="center">
+  <img src="assets/screenshot-dashboard.png" alt="PHP2Shell Shield dashboard" width="880">
+  <br><sub>The dashboard — live status, a protection-layers meter, and a defense pipeline showing requests stopped before PHP.</sub>
+</p>
+
 ## In plain English (no jargon)
 
 Think of your website as a **shop**, and **PHP** as the electrical system the whole shop runs on. **PHP2Shell** is a newly-found fault in that wiring: a burglar can use it to sneak in and take over the shop.
