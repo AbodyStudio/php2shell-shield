@@ -4,7 +4,7 @@ Tags: security, php2shell, hardening, vulnerability, cve
 Requires at least: 3.6
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.3.5
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,13 @@ https://github.com/AbodyStudio/php2shell-shield/issues .
 3. Signed threat definitions and the copy-paste snippet for your host.
 
 == Changelog ==
+
+= 1.4.0 =
+* Stronger, advisory-complete mitigations:
+  * Adds fatal_error_backtraces=0 on PHP 8.5 (the advisory's 8.5-specific hardening).
+  * Caps post_max_size at 32M to shrink the out-of-memory attack surface - applied only when your current limit is higher, never raised, and reversible with the shield.
+  * The manual snippet now also offers a host-level php_admin_value / PHP-FPM-pool form that applications cannot override at runtime, alongside the automatic form, with a plain note about the difference.
+* Threat-definition pack updated to 1.1.0 (signed).
 
 = 1.3.5 =
 * Readme/description polish: fixed nine em-dashes that were showing as stray quote marks in the description, the external-services notes, and older changelog entries. Text only; no code or behaviour change.

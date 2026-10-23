@@ -198,16 +198,57 @@ class P2S_Engine {
 	}
 
 	/**
-	 * Mitigation ini map, e.g. array('memory_limit'=>'-1', ...). Null if N/A.
+	 * Mitigation ini map resolved for this environment.
 	 *
+	 * Starts from the pack's core "ini" settings and folds in any
+	 * "ini_conditional" entries that apply here:
+	 *   - min_php / max_php gate a setting to a PHP branch (e.g.
+	 *     fatal_error_backtraces only on 8.5+);
+	 *   - tighten_only applies a cap only when it would lower the current
+	 *     value (e.g. post_max_size), never raising a tighter one.
+	 *
+	 * @param string|null $php_branch       PHP major.minor, defaults to the
+	 *                                       running version.
+	 * @param string|null $post_max_current Current post_max_size, defaults to
+	 *                                       ini_get(); for tests.
 	 * @return array|null
 	 */
-	public function mitigation_ini() {
+	public function mitigation_ini( $php_branch = null, $post_max_current = null ) {
 		$p = $this->load( 'php2shell' );
-		if ( $p && isset( $p['mitigations']['ini'] ) && is_array( $p['mitigations']['ini'] ) ) {
-			return $p['mitigations']['ini'];
+		if ( ! $p || ! isset( $p['mitigations']['ini'] ) || ! is_array( $p['mitigations']['ini'] ) ) {
+			return null;
 		}
-		return null;
+		$map = $p['mitigations']['ini'];
+
+		if ( null === $php_branch ) {
+			$php_branch = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+		}
+
+		if ( isset( $p['mitigations']['ini_conditional'] ) && is_array( $p['mitigations']['ini_conditional'] ) ) {
+			foreach ( $p['mitigations']['ini_conditional'] as $c ) {
+				if ( ! isset( $c['setting'], $c['value'] ) ) {
+					continue;
+				}
+				if ( isset( $c['min_php'] ) && version_compare( $php_branch, $c['min_php'], '<' ) ) {
+					continue;
+				}
+				if ( isset( $c['max_php'] ) && version_compare( $php_branch, $c['max_php'], '>' ) ) {
+					continue;
+				}
+				if ( ! empty( $c['tighten_only'] ) ) {
+					$current = ( 'post_max_size' === $c['setting'] && null !== $post_max_current )
+						? $post_max_current
+						: ini_get( $c['setting'] );
+					// Skip unless the pack value is strictly smaller (a real tighten).
+					if ( p2s_ini_bytes( $current ) <= p2s_ini_bytes( $c['value'] ) ) {
+						continue;
+					}
+				}
+				$map[ $c['setting'] ] = $c['value'];
+			}
+		}
+
+		return $map;
 	}
 
 	/**

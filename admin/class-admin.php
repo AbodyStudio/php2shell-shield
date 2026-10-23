@@ -580,15 +580,19 @@ class P2S_Admin {
 			} else {
 				echo '<p class="p2s-verify p2s-bad-text">&#9888; Protection is written, but PHP is <strong>not applying it</strong>. Your host may lock these settings. Apply the manual snippet at host level, or contact your host.</p>';
 			}
+			$this->applied_settings_note( $shield->pairs() );
 			$this->post_form( 'p2s_disable', 'p2s_disable', 'Turn off protection', 'secondary' );
 			echo '<p class="p2s-dim">Turning it off restores your original configuration exactly.</p>';
+			$this->override_caveat_note();
 
 		} elseif ( $shield->can_autowrite() ) {
 			echo '<p>One click applies PHP\'s recommended safety settings using <code>' . esc_html( $shield->target() ) . '</code>. The plugin keeps a backup, and you can undo it any time.</p>';
+			$this->applied_settings_note( $shield->pairs() );
 			if ( 'htaccess' === $shield->method() ) {
 				echo '<p class="p2s-dim">Directives are wrapped in <code>IfModule</code> guards, so they cannot take your site down even if something is unusual about the server.</p>';
 			}
 			echo '<p class="p2s-honest-inline"><strong>Heads up:</strong> one setting is <code>memory_limit = -1</code> (unlimited). It is PHP\'s own recommendation for this bug, but on a tiny server one runaway script could use a lot of memory. You can undo it any time.</p>';
+			$this->override_caveat_note();
 			$this->post_form( 'p2s_enable', 'p2s_enable', 'Turn on protection', 'primary' );
 
 		} else {
@@ -947,9 +951,33 @@ class P2S_Admin {
 	protected function render_snippet( $shield ) {
 		echo '<div class="p2s-card">';
 		$this->card_head( 'file', 'Manual snippet' );
-		echo '<p class="p2s-dim">For your host, or if you prefer to apply it yourself (for example at PHP-FPM pool level, which survives everything). Click the box to select all, then copy.</p>';
+		echo '<p class="p2s-dim">For your host, or if you prefer to apply it yourself. Click a box to select all, then copy.</p>';
+		echo '<h3>What the plugin applies here (<code>' . esc_html( $shield->target() ) . '</code>)</h3>';
 		$this->snippet_box( $shield->snippet() );
+		echo '<h3>Stronger: host-level (applications cannot override it)</h3>';
+		echo '<p class="p2s-dim">The form above can be overridden by application code at runtime with <code>ini_set()</code>. This host-level form cannot — but it lives in files a plugin cannot write (your PHP-FPM pool or the Apache vhost, never <code>.htaccess</code>), so apply it yourself or ask your host, then restart PHP-FPM / Apache.</p>';
+		$this->snippet_box( $shield->snippet_hardened() );
 		echo '</div>';
+	}
+
+	/** Describe the extra settings applied beyond the two headline ones. */
+	protected function applied_settings_note( $pairs ) {
+		$extra = array();
+		if ( isset( $pairs['post_max_size'] ) ) {
+			$extra[] = 'request size capped at <code>post_max_size = ' . esc_html( $pairs['post_max_size'] ) . '</code> (large uploads are limited while protection is on; reversible)';
+		}
+		if ( isset( $pairs['fatal_error_backtraces'] ) ) {
+			$extra[] = '<code>fatal_error_backtraces = 0</code> (PHP 8.5 hardening from the advisory)';
+		}
+		if ( empty( $extra ) ) {
+			return;
+		}
+		echo '<p class="p2s-dim">Also applied here: ' . implode( '; ', $extra ) . '.</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- values pre-escaped above; surrounding text is static.
+	}
+
+	/** Explain the runtime-override caveat and point to the host-level form. */
+	protected function override_caveat_note() {
+		echo '<p class="p2s-dim">These settings are written where an application could still raise <code>memory_limit</code> at runtime with <code>ini_set()</code>. For a cap nothing can override, apply the host-level form under <strong>Manual snippet</strong> below.</p>';
 	}
 
 	protected function row( $label, $value_html ) {

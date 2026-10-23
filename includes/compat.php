@@ -301,3 +301,34 @@ if ( ! function_exists( 'p2s_ini_truthy' ) ) {
 		return true;
 	}
 }
+
+if ( ! function_exists( 'p2s_ini_bytes' ) ) {
+	/**
+	 * Parse a php.ini shorthand byte value ("32M", "128K", "1G", "-1") to bytes.
+	 *
+	 * Returns PHP_INT_MAX for an unlimited value (-1 or empty), so callers can
+	 * treat "unlimited" as "larger than any cap".
+	 *
+	 * @param string|int $value Raw ini value.
+	 * @return int Bytes (PHP_INT_MAX for unlimited).
+	 */
+	function p2s_ini_bytes( $value ) {
+		$v = trim( (string) $value );
+		if ( '' === $v || '-1' === $v ) {
+			return PHP_INT_MAX;
+		}
+		$unit = strtolower( substr( $v, -1 ) );
+		$num  = (float) $v; // leading numeric part; ignores a trailing letter.
+		if ( 'g' === $unit ) {
+			$num *= 1024 * 1024 * 1024;
+		} elseif ( 'm' === $unit ) {
+			$num *= 1024 * 1024;
+		} elseif ( 'k' === $unit ) {
+			$num *= 1024;
+		}
+		if ( $num < 0 ) {
+			return PHP_INT_MAX;
+		}
+		return (int) $num;
+	}
+}

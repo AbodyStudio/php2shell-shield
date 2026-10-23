@@ -4,10 +4,14 @@
  *
  *   memory_limit                     = -1   (CVE-2026-109618)
  *   session.upload_progress.enabled  = off  (CVE-2026-109619)
+ *   fatal_error_backtraces           = 0    (PHP 8.5 only)
+ *   post_max_size                    = 32M  (only when it tightens the current value)
  *
- * Both are PHP's own recommended interim settings. They are set in .user.ini
- * (PHP-FPM / CGI / LiteSpeed) or .htaccess (classic mod_php). Everything is
- * reversible, backed up, and verified on a later request.
+ * The map is resolved from the signed pack for this environment. All are PHP's
+ * own recommended interim settings. They are set in .user.ini (PHP-FPM / CGI /
+ * LiteSpeed) or .htaccess (classic mod_php); a stronger host-level
+ * php_admin_value form (which apps cannot override) is offered as a snippet.
+ * Everything is reversible, backed up, and verified on a later request.
  *
  * WordPress-independent so it can be tested from the CLI.
  *
@@ -64,6 +68,27 @@ class P2S_Shield {
 		);
 	}
 
+	/**
+	 * The map actually in force: while the shield is active, the exact map that
+	 * was written (stored at enable time), so display/snippets stay consistent
+	 * even for environment-sensitive settings like a tighten-only post_max_size;
+	 * otherwise the freshly resolved pack map.
+	 */
+	protected function effective_pairs() {
+		if ( $this->is_active() ) {
+			$state = $this->opt_get( 'p2s_shield' );
+			if ( is_array( $state ) && isset( $state['applied_ini'] ) && is_array( $state['applied_ini'] ) && ! empty( $state['applied_ini'] ) ) {
+				return $state['applied_ini'];
+			}
+		}
+		return $this->ini_pairs();
+	}
+
+	/** The ini map in force right now (public, for the admin UI). */
+	public function pairs() {
+		return $this->effective_pairs();
+	}
+
 	/** Is this value an on/off flag (vs. a scalar value)? */
 	protected function is_flag_value( $v ) {
 		$s = strtolower( trim( (string) $v ) );
@@ -95,8 +120,10 @@ class P2S_Shield {
 		return ( 'htaccess' === $method ) ? '.htaccess' : '.user.ini';
 	}
 
-	protected function lines( $method ) {
-		$pairs = $this->ini_pairs();
+	protected function lines( $method, $pairs = null ) {
+		if ( null === $pairs ) {
+			$pairs = $this->effective_pairs();
+		}
 
 		if ( 'htaccess' === $method ) {
 			$inner = array();
@@ -147,16 +174,33 @@ class P2S_Shield {
 				. implode( "\n", $this->lines( 'user_ini' ) );
 		}
 		// snippet-only (exotic SAPI): give the PHP-FPM pool form.
-		$pool = array();
-		foreach ( $this->ini_pairs() as $k => $v ) {
+		return $this->snippet_hardened();
+	}
+
+	/**
+	 * The host-level form, using php_admin_value / php_admin_flag so that
+	 * applications cannot override the settings at runtime with ini_set().
+	 * This is the strongest form, but it lives in files a plugin cannot write
+	 * (the FPM pool or the Apache vhost), so it is offered for the host/admin.
+	 *
+	 * @return string
+	 */
+	public function snippet_hardened() {
+		$pool   = array();
+		$apache = array();
+		foreach ( $this->effective_pairs() as $k => $v ) {
 			if ( $this->is_flag_value( $v ) ) {
-				$pool[] = 'php_admin_flag[' . $k . '] = ' . $this->flag_word( $v );
+				$pool[]   = 'php_admin_flag[' . $k . '] = ' . $this->flag_word( $v );
+				$apache[] = 'php_admin_flag ' . $k . ' ' . $this->flag_word( $v );
 			} else {
-				$pool[] = 'php_admin_value[' . $k . '] = ' . $v;
+				$pool[]   = 'php_admin_value[' . $k . '] = ' . $v;
+				$apache[] = 'php_admin_value ' . $k . ' ' . $v;
 			}
 		}
-		return "; Add to your PHP-FPM pool config (e.g. www.conf), then restart PHP-FPM:\n"
-			. implode( "\n", $pool );
+		return "; PHP-FPM pool config (e.g. www.conf), then restart PHP-FPM:\n"
+			. implode( "\n", $pool )
+			. "\n\n# or Apache vhost / httpd.conf (NOT .htaccess), then restart Apache:\n"
+			. implode( "\n", $apache );
 	}
 
 	/* ---- actions ------------------------------------------------------- */
@@ -203,7 +247,10 @@ class P2S_Shield {
 			);
 		}
 
-		$new = $this->files->set_block( $original, $this->lines( $method ), $file );
+		// Snapshot the resolved map now, write from it, and store it, so the
+		// exact settings in force are what we display and re-apply later.
+		$pairs = $this->effective_pairs();
+		$new   = $this->files->set_block( $original, $this->lines( $method, $pairs ), $file );
 
 		if ( ! $this->files->write( $file, $new ) ) {
 			return array(
@@ -217,11 +264,12 @@ class P2S_Shield {
 		$this->opt_set(
 			'p2s_shield',
 			array(
-				'active'     => 1,
-				'method'     => $method,
-				'file'       => $file,
-				'written_at' => time(),
-				'ttl'        => (int) $this->report['shield']['user_ini_ttl'],
+				'active'      => 1,
+				'method'      => $method,
+				'file'        => $file,
+				'written_at'  => time(),
+				'ttl'         => (int) $this->report['shield']['user_ini_ttl'],
+				'applied_ini' => $pairs,
 			)
 		);
 

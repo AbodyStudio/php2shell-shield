@@ -2,7 +2,7 @@
   "id": "php2shell",
   "name": "PHP2Shell",
   "severity": "critical",
-  "pack_version": "1.0.0",
+  "pack_version": "1.1.0",
   "updated": "2026-10-23",
   "cve": ["CVE-2026-109618", "CVE-2026-109619"],
   "summary": "Two critical remote code execution flaws in PHP core (CVSS 9.2). Exploitable without authentication; can also leak memory containing secrets.",
@@ -19,9 +19,23 @@
     "ini": {
       "memory_limit": "-1",
       "session.upload_progress.enabled": "0"
-    }
+    },
+    "ini_conditional": [
+      {
+        "setting": "fatal_error_backtraces",
+        "value": "0",
+        "min_php": "8.5",
+        "note": "PHP 8.5 only: closes the fatal-error backtrace path flagged in the advisory."
+      },
+      {
+        "setting": "post_max_size",
+        "value": "32M",
+        "tighten_only": true,
+        "note": "Caps request size to shrink the out-of-memory attack surface. Applied only when the current limit is larger than 32M, never raised, so a site already set tighter is left alone."
+      }
+    ]
   },
-  "advice": "Update PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). Until then, turn on the shield to apply PHP's recommended stopgap settings.",
+  "advice": "Update PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). Until then, turn on the shield to apply PHP's recommended stopgap settings. For a cap applications cannot override at runtime, apply the host-level php_admin_value form shown under the manual snippet.",
   "references": [
     "https://www.php.net/",
     "https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching"
