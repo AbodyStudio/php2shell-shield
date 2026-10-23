@@ -17,7 +17,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -155,7 +155,7 @@ class P2S_Engine {
 			return array( 'ok' => false, 'reason' => 'bad_pack' );
 		}
 		if ( ! is_dir( $this->installed_dir ) ) {
-			@mkdir( $this->installed_dir, 0755, true );
+			@mkdir( $this->installed_dir, 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 		}
 		$json_f = $this->installed_dir . $id . '.pack.json';
 		$sig_f  = $this->installed_dir . $id . '.pack.sig';
@@ -174,7 +174,7 @@ class P2S_Engine {
 		if ( false === file_put_contents( $tmp, $content, LOCK_EX ) ) {
 			return false;
 		}
-		if ( ! @rename( $tmp, $path ) ) {
+		if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 			@unlink( $tmp );
 			return false;
 		}

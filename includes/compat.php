@@ -8,7 +8,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -37,10 +37,18 @@ if ( ! function_exists( 'p2s_server' ) ) {
 	 * @return mixed
 	 */
 	function p2s_server( $key, $default = '' ) {
-		if ( isset( $_SERVER[ $key ] ) ) {
-			return $_SERVER[ $key ];
+		if ( ! isset( $_SERVER[ $key ] ) ) {
+			return $default;
 		}
-		return $default;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- unslashed + sanitised just below when WordPress is loaded; raw only in CLI tests, and every caller escapes on output.
+		$v = $_SERVER[ $key ];
+		if ( function_exists( 'wp_unslash' ) ) {
+			$v = wp_unslash( $v );
+		}
+		if ( function_exists( 'sanitize_text_field' ) ) {
+			$v = sanitize_text_field( $v );
+		}
+		return $v;
 	}
 }
 
@@ -97,10 +105,15 @@ if ( ! function_exists( 'p2s_random_string' ) ) {
 			return $out;
 		}
 
-		// Last-resort fallback (non-CSPRNG). Still better than a fixed value.
-		mt_srand( (int) ( microtime( true ) * 1000000 ) ^ getmypid() );
+		// Last-resort fallback, only if random_bytes AND OpenSSL are both
+		// unavailable. Uses wp_rand in WordPress; mt_rand only in CLI tests.
 		for ( $i = 0; $i < $len; $i++ ) {
-			$out .= $chars[ mt_rand( 0, $max ) ];
+			if ( function_exists( 'wp_rand' ) ) {
+				$r = wp_rand( 0, $max );
+			} else {
+				$r = mt_rand( 0, $max ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand -- wp_rand is used under WordPress; this branch is a CLI-only last resort.
+			}
+			$out .= $chars[ $r ];
 		}
 		return $out;
 	}

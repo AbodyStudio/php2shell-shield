@@ -126,7 +126,7 @@ class P2S_Admin {
 
 	public function handle_edge_allow() {
 		$this->guard( 'p2s_edge_allow' );
-		$raw  = isset( $_POST['allow'] ) ? wp_unslash( $_POST['allow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$raw  = isset( $_POST['allow'] ) ? wp_unslash( $_POST['allow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		$list = preg_split( '/[\r\n]+/', (string) $raw );
 		$edge = new P2S_Edge( null, $this->detect_report() );
 		$edge->set_allowlist( $list );
@@ -140,7 +140,7 @@ class P2S_Admin {
 
 	public function handle_cf_connect() {
 		$this->guard( 'p2s_cf' );
-		$token = isset( $_POST['cf_token'] ) ? trim( (string) wp_unslash( $_POST['cf_token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$token = isset( $_POST['cf_token'] ) ? trim( (string) wp_unslash( $_POST['cf_token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		if ( '' === $token ) {
 			$this->back( 'cf_fail' );
 		}
@@ -209,8 +209,8 @@ class P2S_Admin {
 	public function handle_lock_enable() {
 		$this->guard( 'p2s_lock' );
 		$ips = array( p2s_remote_addr() );
-		if ( isset( $_POST['extra_ip'] ) ) {
-			$extra = trim( (string) wp_unslash( $_POST['extra_ip'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( isset( $_POST['extra_ip'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard() above.
+			$extra = trim( (string) wp_unslash( $_POST['extra_ip'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 			if ( '' !== $extra ) {
 				$ips[] = $extra;
 			}
@@ -244,7 +244,7 @@ class P2S_Admin {
 
 	public function handle_key_deactivate() {
 		$this->guard( 'p2s_keys' );
-		$id   = isset( $_POST['key_id'] ) ? sanitize_key( wp_unslash( $_POST['key_id'] ) ) : '';
+		$id   = isset( $_POST['key_id'] ) ? sanitize_key( wp_unslash( $_POST['key_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard() above.
 		$keys = new P2S_Keys();
 		$keys->deactivate( $id );
 		$this->back( 'key_off' );
@@ -259,7 +259,7 @@ class P2S_Admin {
 
 	public function handle_phpcheck() {
 		$this->guard( 'p2s_phpcheck' );
-		$target = isset( $_POST['target'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['target'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$target = isset( $_POST['target'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['target'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		if ( ! preg_match( '/^\d+\.\d+$/', $target ) ) {
 			$target = null;
 		}
@@ -270,7 +270,7 @@ class P2S_Admin {
 
 	public function handle_phpswitch() {
 		$this->guard( 'p2s_phpswitch' );
-		$version = isset( $_POST['version'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['version'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$version = isset( $_POST['version'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['version'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		if ( ! preg_match( '/^\d+\.\d+$/', $version ) ) {
 			$this->back( 'phpswitch_fail' );
 		}
@@ -427,7 +427,7 @@ class P2S_Admin {
 		);
 		echo '<div class="p2s-how">';
 		foreach ( $steps as $s ) {
-			echo '<div class="p2s-step"><div class="p2s-step-ic">' . $this->icon( $s[0] ) . '</div>';
+			echo '<div class="p2s-step"><div class="p2s-step-ic">' . $this->icon( $s[0] ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- icon() returns a fixed, safe inline SVG.
 			echo '<h3>' . esc_html( $s[1] ) . '</h3><p>' . esc_html( $s[2] ) . '</p></div>';
 		}
 		echo '</div>';

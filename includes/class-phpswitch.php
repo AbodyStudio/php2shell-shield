@@ -25,7 +25,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -110,7 +110,7 @@ class P2S_PhpSwitch {
 			'current'   => $current,
 			'available' => $this->available_versions(),
 			'method'    => ( '' !== $current ) ? 'htaccess' : 'none',
-			'writable'  => ( file_exists( $path ) ? is_writable( $path ) : is_writable( $this->base ) ),
+			'writable'  => ( file_exists( $path ) ? is_writable( $path ) : is_writable( $this->base ) ), // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 		);
 	}
 
@@ -131,7 +131,7 @@ class P2S_PhpSwitch {
 			return array( 'ok' => false, 'reason' => 'not_installed' );
 		}
 		$path = $this->base . '.htaccess';
-		if ( ! is_writable( $path ) ) {
+		if ( ! is_writable( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 			return array( 'ok' => false, 'reason' => 'not_writable' );
 		}
 		$orig = file_get_contents( $path );
@@ -230,7 +230,7 @@ class P2S_PhpSwitch {
 		if ( false === @file_put_contents( $tmp, $content, LOCK_EX ) ) {
 			return false;
 		}
-		if ( ! @rename( $tmp, $path ) ) {
+		if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 			@unlink( $tmp );
 			return false;
 		}

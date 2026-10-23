@@ -14,7 +14,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -45,7 +45,7 @@ class P2S_Cloudflare {
 			'Authorization' => 'Bearer ' . $this->token,
 			'Content-Type'  => 'application/json',
 		);
-		$json = ( null === $body ) ? null : json_encode( $body );
+		$json = ( null === $body ) ? null : ( function_exists( 'wp_json_encode' ) ? wp_json_encode( $body ) : json_encode( $body ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- wp_json_encode used when available; plain json_encode only in CLI tests.
 
 		if ( is_callable( $this->transport ) ) {
 			$res = call_user_func( $this->transport, $method, $url, $headers, $json );
@@ -59,41 +59,25 @@ class P2S_Cloudflare {
 	}
 
 	protected function default_transport( $method, $url, $headers, $json ) {
-		if ( function_exists( 'wp_remote_request' ) ) {
-			$args = array(
-				'method'  => $method,
-				'headers' => $headers,
-				'timeout' => 15,
-			);
-			if ( null !== $json ) {
-				$args['body'] = $json;
-			}
-			$resp = wp_remote_request( $url, $args );
-			if ( is_wp_error( $resp ) ) {
-				return array( 'code' => 0, 'body' => '' );
-			}
-			return array(
-				'code' => (int) wp_remote_retrieve_response_code( $resp ),
-				'body' => wp_remote_retrieve_body( $resp ),
-			);
+		if ( ! function_exists( 'wp_remote_request' ) ) {
+			return array( 'code' => 0, 'body' => '' );
 		}
-		// Fallback: cURL.
-		$ch = curl_init( $url );
-		$h  = array();
-		foreach ( $headers as $k => $v ) {
-			$h[] = $k . ': ' . $v;
-		}
-		curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, $method );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, $h );
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 15 );
+		$args = array(
+			'method'  => $method,
+			'headers' => $headers,
+			'timeout' => 15,
+		);
 		if ( null !== $json ) {
-			curl_setopt( $ch, CURLOPT_POSTFIELDS, $json );
+			$args['body'] = $json;
 		}
-		$body = curl_exec( $ch );
-		$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-		curl_close( $ch );
-		return array( 'code' => $code, 'body' => ( false === $body ) ? '' : $body );
+		$resp = wp_remote_request( $url, $args );
+		if ( is_wp_error( $resp ) ) {
+			return array( 'code' => 0, 'body' => '' );
+		}
+		return array(
+			'code' => (int) wp_remote_retrieve_response_code( $resp ),
+			'body' => wp_remote_retrieve_body( $resp ),
+		);
 	}
 
 	/* ---- API calls ----------------------------------------------------- */

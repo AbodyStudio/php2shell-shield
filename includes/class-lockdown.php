@@ -16,7 +16,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 

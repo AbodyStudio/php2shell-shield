@@ -21,7 +21,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -128,7 +128,7 @@ class P2S_Secrets {
 
 	protected function harden_backup_dir( $dir ) {
 		if ( ! is_dir( $dir ) ) {
-			@mkdir( $dir, 0755, true );
+			@mkdir( $dir, 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 		}
 		// Deny web access to the backup (it holds the original secrets).
 		@file_put_contents( $dir . '.htaccess', "Require all denied\n<IfModule !mod_authz_core.c>\nDeny from all\n</IfModule>\n" );
@@ -145,7 +145,7 @@ class P2S_Secrets {
 		if ( false === $path ) {
 			return array( 'ok' => false, 'reason' => 'no_wpconfig' );
 		}
-		if ( ! is_writable( $path ) ) {
+		if ( ! is_writable( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 			return array( 'ok' => false, 'reason' => 'not_writable' );
 		}
 		$content = file_get_contents( $path );
@@ -163,7 +163,7 @@ class P2S_Secrets {
 		$this->harden_backup_dir( $bdir );
 		$bfile = $bdir . 'wp-config-' . gmdate( 'Ymd-His' ) . '.bak';
 		if ( false !== @file_put_contents( $bfile, $content ) ) {
-			@chmod( $bfile, 0600 );
+			@chmod( $bfile, 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 		} else {
 			$bfile = '';
 		}
@@ -173,8 +173,8 @@ class P2S_Secrets {
 		if ( false === @file_put_contents( $tmp, $res['content'], LOCK_EX ) ) {
 			return array( 'ok' => false, 'reason' => 'write_failed' );
 		}
-		@chmod( $tmp, @fileperms( $path ) & 0777 );
-		if ( ! @rename( $tmp, $path ) ) {
+		@chmod( $tmp, @fileperms( $path ) & 0777 ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
+		if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 			@unlink( $tmp );
 			return array( 'ok' => false, 'reason' => 'rename_failed' );
 		}

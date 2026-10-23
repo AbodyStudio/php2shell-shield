@@ -12,7 +12,7 @@
  * @package PHP2Shell_Shield
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'P2S_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -87,9 +87,9 @@ class P2S_Files {
 			return false;
 		}
 		if ( file_exists( $p ) ) {
-			return is_writable( $p );
+			return is_writable( $p ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 		}
-		return is_writable( dirname( $p ) );
+		return is_writable( dirname( $p ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 	}
 
 	/**
@@ -184,8 +184,8 @@ class P2S_Files {
 			return false;
 		}
 		// Match the surrounding dir's perms loosely; keep it readable by the server.
-		@chmod( $tmp, 0644 );
-		if ( ! @rename( $tmp, $p ) ) {
+		@chmod( $tmp, 0644 ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
+		if ( ! @rename( $tmp, $p ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
 			@unlink( $tmp );
 			return false;
 		}
