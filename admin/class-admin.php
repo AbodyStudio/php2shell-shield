@@ -342,6 +342,9 @@ class P2S_Admin {
 			'server'  => '<rect x="2" y="4" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="6" rx="2"/><path d="M6 8 h.01 M6 17 h.01"/>',
 			'file'    => '<path d="M14 2 H6 a2 2 0 0 0-2 2 v16 a2 2 0 0 0 2 2 h12 a2 2 0 0 0 2-2 V8 z"/><path d="M14 2 v6 h6"/>',
 			'eye'     => '<path d="M1 12 s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8 z"/><circle cx="12" cy="12" r="3"/>',
+			'globe'   => '<circle cx="12" cy="12" r="9"/><path d="M3 12 h18 M12 3 a15 15 0 0 1 0 18 M12 3 a15 15 0 0 0 0 18"/>',
+			'code'    => '<path d="M8 6 l-5 6 5 6 M16 6 l5 6-5 6 M13 4 l-2 16"/>',
+			'wp'      => '<circle cx="12" cy="12" r="9"/><path d="M12 3 c3 3 3 15 0 18 M12 3 c-3 3-3 15 0 18 M3.5 9 h17 M3.5 15 h17"/>',
 		);
 		$p = isset( $paths[ $name ] ) ? $paths[ $name ] : $paths['shield'];
 		return '<span class="p2s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg></span>';
@@ -399,24 +402,28 @@ class P2S_Admin {
 		$r      = $detect->run();
 		$shield = new P2S_Shield( null, $r, $engine->mitigation_ini() );
 		$v      = $shield->verify();
+		$edge   = new P2S_Edge( null, $r );
+		$lock   = new P2S_Lockdown();
+		$cfg    = function_exists( 'p2s_cf_config' ) ? p2s_cf_config() : array();
 		$tone   = $this->tone( $r['status']['code'] );
+
+		$layers = array( $shield->is_active(), $edge->is_active(), ! empty( $cfg['rule_on'] ), $lock->is_active() );
+		$on     = 0;
+		foreach ( $layers as $L ) {
+			if ( $L ) {
+				$on++;
+			}
+		}
+		$pct = (int) round( $on / 4 * 100 );
 
 		echo '<div class="wrap p2s-wrap">';
 
-		/* Hero */
-		echo '<div class="p2s-hero">';
-		echo '<div class="p2s-hero-logo">' . $this->logo_svg() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG.
-		echo '<div class="p2s-hero-text"><h1>PHP2Shell Shield</h1><p>Block the exploit. Protect your site.</p></div>';
-		echo '<div class="p2s-badge p2s-' . esc_attr( $tone ) . '">' . esc_html( $r['status']['label'] ) . '</div>';
-		echo '</div>';
-
-		$this->notice();
-
-		/* Status */
-		echo '<div class="p2s-card p2s-status p2s-' . esc_attr( $tone ) . '">';
-		echo '<div class="p2s-light"></div>';
-		echo '<div class="p2s-status-body">';
-		echo '<h2>' . esc_html( $r['status']['label'] ) . '</h2>';
+		/* Hero: shield core + status + layers */
+		echo '<div class="p2s-core p2s-' . esc_attr( $tone ) . '">';
+		echo '<div class="p2s-reactor"><span class="rr r1"></span><span class="rr r2"></span><span class="rr r3"></span><span class="sweep"></span><span class="score">' . $this->logo_svg() . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG.
+		echo '<div class="p2s-core-read">';
+		echo '<div class="p2s-eyebrow"><span class="pulse"></span> PHP2Shell &middot; CVE-2026-109618 / 109619</div>';
+		echo '<div class="p2s-word">' . esc_html( $r['status']['label'] ) . '</div>';
 		echo '<p>' . esc_html( $r['status']['summary'] ) . '</p>';
 		if ( ! empty( $r['status']['notes'] ) ) {
 			echo '<ul class="p2s-notes">';
@@ -425,7 +432,16 @@ class P2S_Admin {
 			}
 			echo '</ul>';
 		}
+		echo '<div class="p2s-layers"><div class="bar"><i style="width:' . esc_attr( (string) $pct ) . '%"></i></div>';
+		echo '<div class="llbl"><span>Protection layers</span><span>' . (int) $on . ' of 4 active</span></div></div>';
+		echo '<div class="p2s-chips">';
+		echo '<span class="pc">PHP ' . esc_html( $r['php']['version'] ) . ' ' . ( $r['php']['is_fixed'] ? '<b class="ok">fixed</b>' : '<b class="bad">affected</b>' ) . '</span>';
+		echo '<span class="pc">' . esc_html( $r['server']['label'] ) . '</span>';
+		echo '<span class="pc">' . esc_html( $r['proxy']['label'] ) . '</span>';
+		echo '</div>';
 		echo '</div></div>';
+
+		$this->notice();
 
 		/* Honesty */
 		echo '<div class="p2s-honest"><strong>This is risk reduction, not a true fix.</strong> ';
@@ -434,6 +450,9 @@ class P2S_Admin {
 			echo ' (' . esc_html( $r['php']['fixed_version'] ) . ' for your branch)';
 		}
 		echo '. The shield lowers your risk and tells you if you were already hit. It cannot make an unpatched server perfectly safe.</div>';
+
+		/* Defense pipeline (reflects real state) */
+		$this->render_pipeline( $shield->is_active(), ! empty( $cfg['rule_on'] ), $r );
 
 		/* Primary action */
 		$this->render_control( $shield, $v );
@@ -444,9 +463,9 @@ class P2S_Admin {
 
 		/* More protection */
 		$this->group_title( 'More protection' );
-		$this->render_edge( new P2S_Edge( null, $r ), $r );
+		$this->render_edge( $edge, $r );
 		$this->render_cloudflare( $r );
-		$this->render_lockdown( new P2S_Lockdown(), $r );
+		$this->render_lockdown( $lock, $r );
 
 		/* Check & recover */
 		$this->group_title( 'Check & recover' );
@@ -462,6 +481,33 @@ class P2S_Admin {
 
 		echo '<p class="p2s-foot">PHP2Shell Shield &middot; by <a href="https://abodystudio.com" target="_blank" rel="noopener">AbodyStudio</a> &middot; <a href="mailto:support@abodystudio.com">support@abodystudio.com</a></p>';
 
+		echo '</div>';
+	}
+
+	protected function pipe_node( $icon, $name, $desc, $on, $guard = false ) {
+		$cls = 'p2s-node' . ( $guard ? ' guard' : '' ) . ( $on ? ' on' : '' );
+		echo '<div class="' . esc_attr( $cls ) . '"><div class="nbox">' . $this->icon( $icon ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- icon is static SVG.
+		echo '<div class="nm">' . esc_html( $name ) . '</div><div class="ds">' . esc_html( $desc ) . '</div></div>';
+	}
+
+	protected function render_pipeline( $shield_on, $cf_on, $r ) {
+		$affected = empty( $r['php']['is_fixed'] );
+		echo '<div class="p2s-card p2s-pipe">';
+		$this->card_head( 'zap', 'Defense pipeline' );
+		echo '<p class="p2s-dim" style="margin-top:-6px">How an incoming request is handled. Defences act <strong>before PHP runs</strong> &mdash; the only place this exploit can be stopped.</p>';
+		echo '<div class="p2s-track' . ( $shield_on ? ' live' : '' ) . '">';
+		echo '<span class="trackline"></span><span class="pkt"></span>';
+		$this->pipe_node( 'globe', 'Request', 'from the internet', false );
+		$this->pipe_node( 'cloud', 'Cloudflare', $cf_on ? 'edge rule active' : 'optional', $cf_on );
+		$this->pipe_node( 'shield', 'Shield', $shield_on ? 'active · before PHP' : 'off', $shield_on, true );
+		$this->pipe_node( 'code', 'PHP', $r['php']['version'] . ( $affected ? ' · vulnerable' : ' · patched' ), ! $affected );
+		$this->pipe_node( 'wp', 'WordPress', 'your site', false );
+		echo '</div>';
+		if ( $shield_on ) {
+			echo '<div class="p2s-pipecap ok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Upload-style attack requests are inspected and <strong>stopped at the Shield</strong>, before they reach PHP.</div>';
+		} else {
+			echo '<div class="p2s-pipecap warn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg> Protection is off &mdash; turn it on below so requests are filtered before PHP runs.</div>';
+		}
 		echo '</div>';
 	}
 
@@ -783,8 +829,68 @@ class P2S_Admin {
 
 	protected function css() {
 		return '
-		.p2s-wrap{max-width:1040px;margin-right:20px}
+		.p2s-wrap{max-width:1080px;margin:10px 20px 0 2px;--g:#1a7f37;--g2:#22a04a;--gl:#45c46e;--mint:#eaf8f0;--ink:#0f1b24;--muted:#5e6e76;--dim:#8a98a0;--line:#e5ebf0;--card:#ffffff}
 		.p2s-wrap *{box-sizing:border-box}
+		.p2s-wrap h1,.p2s-wrap h2,.p2s-wrap h3{color:var(--ink)}
+
+		/* ---- hero core ---- */
+		.p2s-core{position:relative;overflow:hidden;display:grid;grid-template-columns:230px 1fr;gap:26px;align-items:center;
+			background:linear-gradient(135deg,#ffffff 0%,#f2fbf6 55%,#eef7ff 100%);
+			border:1px solid #d9eadf;border-radius:22px;padding:26px 30px;margin:16px 0 14px;
+			box-shadow:0 1px 2px rgba(16,40,30,.04),0 24px 60px rgba(16,60,40,.08)}
+		.p2s-core::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;
+			background:radial-gradient(circle,rgba(34,160,74,.10),transparent 70%);pointer-events:none}
+		.p2s-reactor{position:relative;width:200px;height:200px;margin:auto}
+		.p2s-reactor .rr{position:absolute;border-radius:50%;border:1px solid rgba(26,127,55,.18)}
+		.p2s-reactor .r1{inset:2px;border-style:dashed;animation:p2sspin 28s linear infinite}
+		.p2s-reactor .r2{inset:30px;border-color:rgba(10,150,170,.18);animation:p2sspin 20s linear infinite reverse}
+		.p2s-reactor .r3{inset:58px;border-style:dashed;border-color:rgba(26,127,55,.28);animation:p2sspin 13s linear infinite}
+		.p2s-reactor .sweep{position:absolute;inset:2px;border-radius:50%;background:conic-gradient(from 0deg,rgba(34,160,74,0) 300deg,rgba(34,160,74,.18) 360deg);
+			-webkit-mask:radial-gradient(circle,transparent 54%,#000 55%);mask:radial-gradient(circle,transparent 54%,#000 55%);animation:p2sspin 5s linear infinite}
+		.p2s-reactor .score{position:absolute;inset:0;display:grid;place-items:center}
+		.p2s-reactor .score .p2s-logo{width:76px;height:76px;filter:drop-shadow(0 6px 14px rgba(26,127,55,.28))}
+		@keyframes p2sspin{to{transform:rotate(360deg)}}
+		.p2s-core-read .p2s-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--g);background:var(--mint);border:1px solid #cfeada;padding:5px 12px;border-radius:999px}
+		.p2s-core-read .p2s-eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--g2);box-shadow:0 0 0 0 rgba(34,160,74,.5);animation:p2spulse 2.2s infinite}
+		@keyframes p2spulse{0%{box-shadow:0 0 0 0 rgba(34,160,74,.45)}70%{box-shadow:0 0 0 8px rgba(34,160,74,0)}100%{box-shadow:0 0 0 0 rgba(34,160,74,0)}}
+		.p2s-word{font-size:46px;line-height:1.02;font-weight:800;letter-spacing:-.5px;margin:12px 0 8px;
+			background:linear-gradient(90deg,#16a34a,#1a7f37 55%,#0aa5c9);-webkit-background-clip:text;background-clip:text;color:transparent}
+		.p2s-core.p2s-warn .p2s-word{background:linear-gradient(90deg,#d08700,#b45309);-webkit-background-clip:text;background-clip:text}
+		.p2s-core.p2s-bad .p2s-word{background:linear-gradient(90deg,#e5484d,#b42318);-webkit-background-clip:text;background-clip:text}
+		.p2s-core-read>p{font-size:14.5px;line-height:1.6;color:#3c4a52;max-width:560px;margin:0 0 14px}
+		.p2s-layers{max-width:420px;margin:4px 0 14px}
+		.p2s-layers .bar{height:9px;border-radius:999px;background:#e6edf1;overflow:hidden}
+		.p2s-layers .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--g),var(--gl));box-shadow:0 0 10px rgba(34,160,74,.4);transition:width .6s}
+		.p2s-layers .llbl{display:flex;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.4px;color:var(--muted);margin-top:6px}
+		.p2s-chips{display:flex;flex-wrap:wrap;gap:8px}
+		.p2s-chips .pc{font-size:12px;color:var(--muted);background:#f3f6f8;border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+		.p2s-chips .pc b{margin-left:4px;font-size:10px;padding:1px 7px;border-radius:999px}
+		.p2s-chips .pc b.ok{background:#e6f4ea;color:#15803d}.p2s-chips .pc b.bad{background:#fde8e6;color:#b42318}
+		@media(max-width:820px){.p2s-core{grid-template-columns:1fr;text-align:center}.p2s-layers,.p2s-core-read>p{margin-left:auto;margin-right:auto}.p2s-chips{justify-content:center}.p2s-word{font-size:36px}}
+
+		/* ---- pipeline ---- */
+		.p2s-track{position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin:16px 0 4px;padding:0 6px}
+		.p2s-track .trackline{position:absolute;left:8%;right:8%;top:34px;height:3px;border-radius:3px;background:linear-gradient(90deg,#0aa5c9,#22a04a 55%,#f2b705);opacity:.55}
+		.p2s-track .pkt{position:absolute;left:8%;top:34px;width:11px;height:11px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.18);transform:translate(-50%,-50%);opacity:0}
+		.p2s-track.live .pkt{opacity:1;animation:p2sflow 4.4s cubic-bezier(.5,0,.5,1) infinite}
+		@keyframes p2sflow{0%{left:8%;background:#e5484d}42%{left:46%;background:#e5484d}
+			50%{left:47%;transform:translate(-50%,-50%) scale(1.9);background:#22a04a;box-shadow:0 0 0 6px rgba(34,160,74,.25)}
+			58%,100%{left:47%;opacity:0;transform:translate(-50%,-50%) scale(.3)}}
+		.p2s-node{position:relative;z-index:2;text-align:center;width:118px}
+		.p2s-node .nbox{width:68px;height:68px;margin:0 auto 10px;border-radius:18px;display:grid;place-items:center;background:#fff;border:1px solid var(--line);color:var(--dim);box-shadow:0 6px 16px rgba(16,40,30,.06)}
+		.p2s-node .nbox .p2s-ic{background:none;width:auto;height:auto}.p2s-node .nbox svg{width:26px;height:26px}
+		.p2s-node.on .nbox{color:var(--g);border-color:#bfe3c9;background:var(--mint)}
+		.p2s-node.guard .nbox{color:#fff;border-color:transparent;background:linear-gradient(135deg,#1a7f37,#22a04a);box-shadow:0 10px 24px rgba(26,127,55,.35);animation:p2sguard 3s ease-in-out infinite}
+		.p2s-node.guard:not(.on) .nbox{background:#fff;color:var(--dim);box-shadow:0 6px 16px rgba(16,40,30,.06);animation:none}
+		@keyframes p2sguard{0%,100%{box-shadow:0 8px 20px rgba(26,127,55,.28)}50%{box-shadow:0 10px 30px rgba(26,127,55,.5)}}
+		.p2s-node .nm{font-size:12.5px;font-weight:700;letter-spacing:.4px;color:var(--ink)}
+		.p2s-node.guard .nm{color:var(--g)}
+		.p2s-node .ds{font-size:10.5px;color:var(--dim);margin-top:3px;font-family:ui-monospace,Menlo,Consolas,monospace}
+		.p2s-pipecap{display:flex;gap:9px;align-items:center;margin-top:16px;font-size:13.5px;padding:11px 15px;border-radius:12px}
+		.p2s-pipecap.ok{background:#eefaf1;border:1px solid #cdecd6;color:#15803d}
+		.p2s-pipecap.warn{background:#fff8e6;border:1px solid #f0d58a;color:#92600a}
+		.p2s-pipecap svg{flex:0 0 auto}
+		@media(max-width:700px){.p2s-track{flex-wrap:wrap;gap:14px;justify-content:center}.p2s-track .trackline,.p2s-track .pkt{display:none}}
 		/* hero */
 		.p2s-hero{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#0b0f10 0%,#101f24 60%,#0b0f10 100%);color:#fff;border-radius:18px;padding:26px 30px;margin:18px 0 22px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
 		.p2s-hero-logo{width:64px;height:64px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.35);border-radius:16px}
