@@ -4,7 +4,7 @@ Tags: security, php2shell, hardening, vulnerability, cve
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,12 @@ This plugin contacts these services, only when you ask it to:
 * **api.cloudflare.com** — only if you connect a Cloudflare API token and deploy
   the edge rule. Your token and the rule are sent to manage a firewall rule in
   your own Cloudflare zone. See https://www.cloudflare.com/privacypolicy/ .
+* **api.github.com** and **github.com** — to check for and download plugin
+  updates from the project's GitHub Releases (this plugin is distributed on
+  GitHub, not WordPress.org). Only the request to read the latest release and
+  download the signed update is made. Every update is verified against the
+  plugin's bundled signing key before it is installed. See
+  https://docs.github.com/site-policy/privacy-policies/github-privacy-statement .
 
 The plugin does not phone home and sends no data anywhere else.
 
@@ -95,6 +101,10 @@ support@abodystudio.com or abodystudio@gmail.com, or open an issue at
 https://github.com/AbodyStudio/php2shell-shield/issues .
 
 == Changelog ==
+
+= 1.1.1 =
+* Added a GitHub auto-updater: updates now appear on the Plugins screen and install in one click, straight from the project's GitHub Releases.
+* Every update is cryptographically verified (RSA-SHA256) against the plugin's bundled signing key before it is installed � an unsigned or tampered download is refused.
 
 = 1.1.0 =
 * Redesigned admin dashboard: modern, visual layout with the shield logo, a

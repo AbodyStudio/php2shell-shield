@@ -35,4 +35,16 @@ rm -f "$DEST/assets/banner.png.license" 2>/dev/null || true
 rm -rf "$TMP"
 
 echo "Built $OUT"
+
+# Sign the zip for the GitHub auto-updater (detached RSA-SHA256, single-line
+# base64) when the private key is present. The matching "<zip>.sig" is attached
+# to the GitHub release; the plugin verifies it before installing an update.
+KEY="keys/p2s-private.pem"
+if [ -f "$KEY" ]; then
+  openssl dgst -sha256 -sign "$KEY" "$OUT" | openssl base64 -A > "$OUT.sig"
+  echo "Signed  $OUT.sig"
+else
+  echo "NOTE: $KEY not found — zip not signed (auto-update verification needs the .sig)."
+fi
+
 unzip -l "$OUT" | awk 'NR>3 && $4 {print "  "$4}' | grep -v '^\s*$' | sed '/^  -*$/d;/Archive/d' || true
