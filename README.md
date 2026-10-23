@@ -30,7 +30,27 @@
 
 > **This is a shield, not a cure.** The only real fix for PHP2Shell is updating PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). This plugin is for the gap until then — it lowers risk, tells you if you were already hit, and gives you an emergency switch. It cannot make an unpatched server perfectly safe.
 
-## Why a normal plugin can't stop PHP2Shell
+## In plain English (no jargon)
+
+Think of your website as a **shop**, and **PHP** as the electrical system the whole shop runs on. **PHP2Shell** is a newly-found fault in that wiring: a burglar can use it to sneak in and take over the shop.
+
+The proper fix is replacing the faulty wiring — **updating PHP**. But lots of owners are scared that'll knock over their displays (break their site), so they put it off and stay exposed.
+
+Ordinary security plugins are a guard standing **inside** the shop — but the burglar strikes **in the wiring, before he ever reaches the shop floor**, so the inside guard never sees him. **PHP2Shell Shield is different: it places guards _outside_, at the street and the front door, so the burglar is stopped before he can reach the wiring.** That's the whole trick, and it's why it can protect sites that can't update PHP.
+
+What each part does, in plain terms:
+
+- **The traffic light** — checks your shop and tells you plainly: exposed, protected, or needs your landlord's help.
+- **Protection** (one button) — applies the safety settings PHP's own makers recommend, so the burglar's trick stops working. One click, one click to undo.
+- **Edge filter / Cloudflare** — a bouncer at the street who turns away the exact kind of suspicious delivery the burglar hides inside.
+- **Lockdown** — the "close the shop" button: only you get in; everyone else sees a friendly "back soon" sign.
+- **Breach check** — a detective that checks whether a burglar already got in and planted anything.
+- **Remote keys** — lists everyone holding a master key to your shop and lets you take a key back.
+- **Secrets reset** — changes the locks, so any copied key stops working.
+
+It never pretends the danger is gone — the best it ever says is *"Shielded — still update PHP when you can."* It buys you time and tells you if you've been robbed; it doesn't replace the repair.
+
+## Why a normal plugin can't stop PHP2Shell (technical)
 
 The bug fires while PHP is still reading the request — before WordPress or any plugin loads. So the defences live where the request is handled **before PHP runs**: the edge (Cloudflare), the web server (`.htaccess` / nginx), and PHP's own pre-execution config (`.user.ini`). WordPress is only the control panel.
 

@@ -1,10 +1,10 @@
 === PHP2Shell Shield ===
 Contributors: abodystudio
 Tags: security, php2shell, hardening, vulnerability, cve
-Requires at least: 5.0
+Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -95,6 +95,14 @@ support@abodystudio.com or abodystudio@gmail.com, or open an issue at
 https://github.com/AbodyStudio/php2shell-shield/issues .
 
 == Changelog ==
+
+= 1.1.0 =
+* Redesigned admin dashboard: modern, visual layout with the shield logo, a
+  plain-language "How it works" section, icons on every panel, and clearer
+  grouping (Protection / More protection / Check & recover / Details).
+* Fixed the manual snippet boxes so the code is always clearly visible.
+* The plugin's menu icon is now the PHP2Shell Shield shield.
+* Broader WordPress compatibility (WordPress 4.0+).
 
 = 1.0.0 =
 * First stable release. Detection, one-click shield, edge filter (.htaccess /

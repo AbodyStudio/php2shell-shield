@@ -1,9 +1,6 @@
 <?php
 /**
- * Admin UI for PHP2Shell Shield.
- *
- * M0: read-only detection dashboard.
- * M1: one-click shield (enable / disable), verification, and a manual snippet.
+ * Admin UI for PHP2Shell Shield — modern, visual dashboard.
  *
  * @package PHP2Shell_Shield
  */
@@ -40,16 +37,26 @@ class P2S_Admin {
 			'manage_options',
 			P2S_SLUG,
 			array( $this, 'render' ),
-			'dashicons-shield',
+			$this->menu_icon(),
 			81
 		);
+	}
+
+	/** A green shield (with a check knocked out) as the admin menu icon. */
+	protected function menu_icon() {
+		$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">'
+			. '<path fill="#3fb950" fill-rule="evenodd" d="M10 1 L3 3.5 V9.3 C3 13.6 6 17.2 10 18.5 C14 17.2 17 13.6 17 9.3 V3.5 Z '
+			. 'M8.9 13 L5.4 9.5 L6.8 8.1 L8.9 10.2 L13.2 5.9 L14.6 7.3 Z"/></svg>';
+		return 'data:image/svg+xml;base64,' . base64_encode( $svg );
 	}
 
 	public function assets( $hook ) {
 		if ( 'toplevel_page_' . P2S_SLUG !== $hook ) {
 			return;
 		}
-		wp_add_inline_style( 'wp-admin', $this->css() );
+		wp_register_style( 'p2s-admin', false, array(), P2S_VERSION );
+		wp_enqueue_style( 'p2s-admin' );
+		wp_add_inline_style( 'p2s-admin', $this->css() );
 	}
 
 	/* ---- action handlers ---------------------------------------------- */
@@ -121,7 +128,6 @@ class P2S_Admin {
 		$list = preg_split( '/[\r\n]+/', (string) $raw );
 		$edge = new P2S_Edge( null, $this->detect_report() );
 		$edge->set_allowlist( $list );
-		// If the filter is live, re-write it with the new allowlist.
 		if ( $edge->is_active() ) {
 			$edge->enable_htaccess();
 		}
@@ -141,7 +147,7 @@ class P2S_Admin {
 		if ( empty( $ver['ok'] ) ) {
 			$this->back( 'cf_badtoken' );
 		}
-		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		$host = (string) parse_url( home_url(), PHP_URL_HOST ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- core parse_url keeps PHP 4.0+ support.
 		$zone = $cf->find_zone( $host );
 		if ( empty( $zone['ok'] ) ) {
 			$this->back( 'cf_nozone' );
@@ -177,8 +183,8 @@ class P2S_Admin {
 		$edge = new P2S_Edge( null, $this->detect_report() );
 		$res  = $cf->deploy_rule( 'p2s:filter', $edge->cf_expression(), 'block' );
 		if ( ! empty( $res['ok'] ) ) {
-			$c             = p2s_cf_config();
-			$c['rule_on']  = 1;
+			$c            = p2s_cf_config();
+			$c['rule_on'] = 1;
 			p2s_opt_set( 'p2s_cf', $c );
 		}
 		$this->back( ! empty( $res['ok'] ) ? 'cf_deployed' : 'cf_fail' );
@@ -246,8 +252,6 @@ class P2S_Admin {
 		$this->guard( 'p2s_secrets' );
 		$secrets = new P2S_Secrets();
 		$res     = $secrets->rotate_file();
-		// Rotating salts invalidates our own cookie, so the redirect may land on
-		// the login screen — that is expected and fine.
 		$this->back( ! empty( $res['ok'] ) ? 'secrets_done' : 'secrets_fail' );
 	}
 
@@ -260,15 +264,15 @@ class P2S_Admin {
 		$n = sanitize_text_field( wp_unslash( $_GET['p2s_notice'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( 'enabled' === $n ) {
-			$this->admin_box( 'success', 'Shield turned on. The settings were written. PHP may take a few minutes to pick them up on some servers — re-scan to confirm.' );
+			$this->admin_box( 'success', 'Protection turned on. The settings were written. PHP may take a few minutes to pick them up on some servers — re-scan to confirm.' );
 		} elseif ( 'disabled' === $n ) {
-			$this->admin_box( 'info', 'Shield turned off. Your original configuration was restored.' );
+			$this->admin_box( 'info', 'Protection turned off. Your original configuration was restored.' );
 		} elseif ( 'enable_failed_not_writable' === $n ) {
-			$this->admin_box( 'error', 'The plugin could not write the config file (the server blocked it). Use the manual snippet below, or ask your host to apply it.' );
+			$this->admin_box( 'error', 'The plugin could not write the config file (the server blocked it). Use the manual snippet, or ask your host to apply it.' );
 		} elseif ( 'enable_failed_snippet_only' === $n ) {
-			$this->admin_box( 'error', 'This server type needs a host-side change. Use the manual snippet below.' );
+			$this->admin_box( 'error', 'This server type needs a host-side change. Use the manual snippet.' );
 		} elseif ( 0 === strpos( $n, 'enable_failed' ) ) {
-			$this->admin_box( 'error', 'The shield could not be turned on automatically. Use the manual snippet below.' );
+			$this->admin_box( 'error', 'Protection could not be turned on automatically. Use the manual snippet.' );
 		} elseif ( 'edge_on' === $n ) {
 			$this->admin_box( 'success', 'Edge filter turned on. Please test your site\'s forms and uploads — if anything stops working, add its path to the allowlist or turn the filter off.' );
 		} elseif ( 'edge_off' === $n ) {
@@ -312,7 +316,7 @@ class P2S_Admin {
 		echo '<div class="notice notice-' . esc_attr( $type ) . ' is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
 	}
 
-	/* ---- status tone --------------------------------------------------- */
+	/* ---- helpers ------------------------------------------------------- */
 
 	protected function tone( $code ) {
 		$map = array(
@@ -323,6 +327,64 @@ class P2S_Admin {
 			'unknown'    => 'warn',
 		);
 		return isset( $map[ $code ] ) ? $map[ $code ] : 'warn';
+	}
+
+	/** Inline feather-style icon by name, coloured via currentColor. */
+	protected function icon( $name ) {
+		$paths = array(
+			'shield'  => '<path d="M12 2 L4 5 V11 C4 16.2 7.4 20.6 12 22 C16.6 20.6 20 16.2 20 11 V5 Z"/><path d="M8.5 11.8 L11 14.3 L15.8 9"/>',
+			'zap'     => '<path d="M13 2 L3 14 h9 l-1 8 10-12 h-9 l1-8 z"/>',
+			'cloud'   => '<path d="M18 10 h-1.26 A8 8 0 1 0 9 20 h9 a5 5 0 0 0 0-10 z"/>',
+			'lock'    => '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11 V7 a5 5 0 0 1 10 0 v4"/>',
+			'search'  => '<circle cx="11" cy="11" r="8"/><path d="M21 21 l-4.35-4.35"/>',
+			'key'     => '<circle cx="8" cy="15" r="4"/><path d="M11 12 L20 3 M18 5 L21 8 M15 8 L18 11"/>',
+			'refresh' => '<path d="M23 4 v6 h-6 M1 20 v-6 h6"/><path d="M3.5 9 a9 9 0 0 1 14.9-3.4 L23 10 M1 14 l4.6 4.4 A9 9 0 0 0 20.5 15"/>',
+			'server'  => '<rect x="2" y="4" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="6" rx="2"/><path d="M6 8 h.01 M6 17 h.01"/>',
+			'file'    => '<path d="M14 2 H6 a2 2 0 0 0-2 2 v16 a2 2 0 0 0 2 2 h12 a2 2 0 0 0 2-2 V8 z"/><path d="M14 2 v6 h6"/>',
+			'eye'     => '<path d="M1 12 s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8 z"/><circle cx="12" cy="12" r="3"/>',
+		);
+		$p = isset( $paths[ $name ] ) ? $paths[ $name ] : $paths['shield'];
+		return '<span class="p2s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $p . '</svg></span>';
+	}
+
+	/** Big green shield logo for the hero. */
+	protected function logo_svg() {
+		return '<svg class="p2s-logo" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+			. '<path d="M12 2 L4 5 V11 C4 16.2 7.4 20.6 12 22 C16.6 20.6 20 16.2 20 11 V5 Z"/>'
+			. '<path d="M8.5 11.8 L11 14.3 L15.8 9" stroke-width="2.2"/></svg>';
+	}
+
+	protected function card_head( $icon, $title, $badge = '' ) {
+		echo '<div class="p2s-head">' . $this->icon( $icon ) . '<h2>' . esc_html( $title ) . '</h2>' . $badge . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- icon + pre-escaped badge.
+	}
+
+	protected function group_title( $txt ) {
+		echo '<h2 class="p2s-group">' . esc_html( $txt ) . '</h2>';
+	}
+
+	protected function pill( $tone, $txt ) {
+		return ' <span class="p2s-pill p2s-' . esc_attr( $tone ) . '">' . esc_html( $txt ) . '</span>';
+	}
+
+	protected function snippet_box( $text ) {
+		$rows = substr_count( $text, "\n" ) + 1;
+		echo '<textarea class="p2s-snippet" rows="' . esc_attr( (string) $rows ) . '" readonly="readonly" onclick="this.select()"'
+			. ' style="width:100%;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;background:#0b0f10;color:#7ee787;border:1px solid #30363d;border-radius:10px;padding:14px;box-shadow:inset 0 1px 3px rgba(0,0,0,.45)">'
+			. esc_textarea( $text ) . '</textarea>';
+	}
+
+	protected function how_it_works() {
+		$steps = array(
+			array( 'search', '1 · We check', 'We read your PHP, server and settings and tell you plainly whether you are at risk — no guesswork.' ),
+			array( 'shield', '2 · We shield', 'We place the fix where the attack happens — before PHP runs — so even a site that can\'t update PHP is protected.' ),
+			array( 'eye', '3 · We watch', 'We scan for break-ins, list anyone holding a master key to your site, and let you lock it down in one click.' ),
+		);
+		echo '<div class="p2s-how">';
+		foreach ( $steps as $s ) {
+			echo '<div class="p2s-step"><div class="p2s-step-ic">' . $this->icon( $s[0] ) . '</div>';
+			echo '<h3>' . esc_html( $s[1] ) . '</h3><p>' . esc_html( $s[2] ) . '</p></div>';
+		}
+		echo '</div>';
 	}
 
 	/* ---- render -------------------------------------------------------- */
@@ -343,14 +405,14 @@ class P2S_Admin {
 
 		/* Hero */
 		echo '<div class="p2s-hero">';
-		echo '<div class="p2s-hero-mark">&#128737;</div>';
+		echo '<div class="p2s-hero-logo">' . $this->logo_svg() . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG.
 		echo '<div class="p2s-hero-text"><h1>PHP2Shell Shield</h1><p>Block the exploit. Protect your site.</p></div>';
 		echo '<div class="p2s-badge p2s-' . esc_attr( $tone ) . '">' . esc_html( $r['status']['label'] ) . '</div>';
 		echo '</div>';
 
 		$this->notice();
 
-		/* Status card */
+		/* Status */
 		echo '<div class="p2s-card p2s-status p2s-' . esc_attr( $tone ) . '">';
 		echo '<div class="p2s-light"></div>';
 		echo '<div class="p2s-status-body">';
@@ -365,7 +427,7 @@ class P2S_Admin {
 		}
 		echo '</div></div>';
 
-		/* Honesty banner */
+		/* Honesty */
 		echo '<div class="p2s-honest"><strong>This is risk reduction, not a true fix.</strong> ';
 		echo 'The only real fix for PHP2Shell is updating PHP to a fixed version';
 		if ( $r['php']['fixed_version'] ) {
@@ -373,45 +435,79 @@ class P2S_Admin {
 		}
 		echo '. The shield lowers your risk and tells you if you were already hit. It cannot make an unpatched server perfectly safe.</div>';
 
-		/* The shield control */
+		/* Primary action */
 		$this->render_control( $shield, $v );
 
-		/* Edge filter + lockdown (M3) */
+		/* How it works */
+		$this->group_title( 'How it works' );
+		$this->how_it_works();
+
+		/* More protection */
+		$this->group_title( 'More protection' );
 		$this->render_edge( new P2S_Edge( null, $r ), $r );
 		$this->render_cloudflare( $r );
 		$this->render_lockdown( new P2S_Lockdown(), $r );
 
-		/* Breach check + remote keys (M4) */
+		/* Check & recover */
+		$this->group_title( 'Check & recover' );
 		$this->render_keys();
 		$this->render_scan();
-
-		/* Secrets reset (M5) */
 		$this->render_secrets();
 
-		/* Environment table */
+		/* Details */
+		$this->group_title( 'Details' );
 		$this->render_environment( $r );
-
-		/* Threat definitions (rule pack) */
 		$this->render_pack( $engine );
-
-		/* Manual snippet */
 		$this->render_snippet( $shield );
+
+		echo '<p class="p2s-foot">PHP2Shell Shield &middot; by <a href="https://abodystudio.com" target="_blank" rel="noopener">AbodyStudio</a> &middot; <a href="mailto:support@abodystudio.com">support@abodystudio.com</a></p>';
 
 		echo '</div>';
 	}
 
 	protected function post_form( $action, $nonce, $label, $style, $extra_html = '' ) {
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin-right:8px">';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 8px 8px 0">';
 		echo '<input type="hidden" name="action" value="' . esc_attr( $action ) . '" />';
 		wp_nonce_field( $nonce );
-		echo $extra_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_* below.
+		echo $extra_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- caller pre-escapes.
 		submit_button( $label, $style, 'submit', false );
 		echo '</form>';
 	}
 
+	protected function render_control( $shield, $v ) {
+		echo '<div class="p2s-card p2s-primary">';
+		$this->card_head( 'shield', 'Protection' );
+
+		if ( $shield->is_active() ) {
+			if ( 'live' === $v['phase'] ) {
+				echo '<p class="p2s-verify p2s-ok-text">&#10003; Protection is on and <strong>verified live</strong> — the settings are in effect right now.</p>';
+			} elseif ( 'pending' === $v['phase'] ) {
+				echo '<p class="p2s-verify p2s-warn-text">&#9203; Protection is written. PHP caches settings, so it should take effect within about ' . esc_html( (string) $v['remaining'] ) . ' seconds. Re-scan after that to confirm.</p>';
+			} else {
+				echo '<p class="p2s-verify p2s-bad-text">&#9888; Protection is written, but PHP is <strong>not applying it</strong>. Your host may lock these settings. Apply the manual snippet at host level, or contact your host.</p>';
+			}
+			$this->post_form( 'p2s_disable', 'p2s_disable', 'Turn off protection', 'secondary' );
+			echo '<p class="p2s-dim">Turning it off restores your original configuration exactly.</p>';
+
+		} elseif ( $shield->can_autowrite() ) {
+			echo '<p>One click applies PHP\'s recommended safety settings using <code>' . esc_html( $shield->target() ) . '</code>. The plugin keeps a backup, and you can undo it any time.</p>';
+			if ( 'htaccess' === $shield->method() ) {
+				echo '<p class="p2s-dim">Directives are wrapped in <code>IfModule</code> guards, so they cannot take your site down even if something is unusual about the server.</p>';
+			}
+			echo '<p class="p2s-honest-inline"><strong>Heads up:</strong> one setting is <code>memory_limit = -1</code> (unlimited). It is PHP\'s own recommendation for this bug, but on a tiny server one runaway script could use a lot of memory. You can undo it any time.</p>';
+			$this->post_form( 'p2s_enable', 'p2s_enable', 'Turn on protection', 'primary' );
+
+		} else {
+			echo '<p>On this server the plugin cannot write the settings itself. Copy the manual snippet below and apply it (or ask your host to). Then re-scan and the status will update.</p>';
+		}
+
+		echo '</div>';
+	}
+
 	protected function render_edge( $edge, $r ) {
-		echo '<div class="p2s-card"><h2>Edge request filter <span class="p2s-pill p2s-warn">advanced</span></h2>';
-		echo '<p>Blocks file-upload-style requests (multipart POST) except on the paths you allow — this is PHP\'s suggested front-end control for the upload bug. It is extra defence on top of the shield.</p>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'zap', 'Edge request filter', $this->pill( 'warn', 'advanced' ) );
+		echo '<p>Blocks file-upload-style requests (multipart POST) except on the paths you allow — PHP\'s suggested front-end control for the upload bug. Extra defence on top of the main protection.</p>';
 		echo '<p class="p2s-honest-inline"><strong>This can affect front-end forms and uploads.</strong> Turn it on, then test your contact forms, media uploads and checkout. If something breaks, add its path below or turn it off.</p>';
 
 		if ( $edge->is_active() ) {
@@ -423,25 +519,25 @@ class P2S_Admin {
 			echo '<p class="p2s-dim">On this server (' . esc_html( $r['server']['label'] ) . ') the plugin cannot write the filter. Use the nginx snippet below, or the Cloudflare option.</p>';
 		}
 
-		// Allowlist editor.
 		$allow = implode( "\n", $edge->allowlist() );
-		echo '<h3 style="margin-top:18px">Allowlist (paths that may receive uploads)</h3>';
+		echo '<h3>Allowlist (paths that may receive uploads)</h3>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		echo '<input type="hidden" name="action" value="p2s_edge_allow" />';
 		wp_nonce_field( 'p2s_edge_allow' );
-		echo '<textarea name="allow" rows="5" class="large-text code" style="max-width:520px">' . esc_textarea( $allow ) . '</textarea><br>';
+		echo '<textarea name="allow" rows="5" class="p2s-input" style="max-width:520px">' . esc_textarea( $allow ) . '</textarea><br>';
 		submit_button( 'Save allowlist', 'secondary', 'submit', false );
 		echo '</form>';
 
-		echo '<h3 style="margin-top:18px">nginx snippet</h3>';
-		echo '<textarea class="p2s-snippet" rows="' . esc_attr( (string) ( substr_count( $edge->nginx_snippet(), "\n" ) + 1 ) ) . '" readonly="readonly" onclick="this.select()">' . esc_textarea( $edge->nginx_snippet() ) . '</textarea>';
+		echo '<h3>nginx snippet</h3>';
+		$this->snippet_box( $edge->nginx_snippet() );
 		echo '</div>';
 	}
 
 	protected function render_cloudflare( $r ) {
 		$cfg       = function_exists( 'p2s_cf_config' ) ? p2s_cf_config() : array();
 		$connected = ! empty( $cfg['connected'] );
-		echo '<div class="p2s-card"><h2>Cloudflare edge rule</h2>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'cloud', 'Cloudflare edge rule' );
 
 		if ( ! empty( $r['proxy']['cloudflare'] ) ) {
 			echo '<p class="p2s-verify p2s-ok-text">&#10003; This site appears to be behind Cloudflare — the strongest place to block the bad request, before it reaches your server.</p>';
@@ -454,12 +550,12 @@ class P2S_Admin {
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			echo '<input type="hidden" name="action" value="p2s_cf_connect" />';
 			wp_nonce_field( 'p2s_cf' );
-			echo '<input type="password" name="cf_token" class="regular-text" autocomplete="off" placeholder="Cloudflare API token" /> ';
+			echo '<input type="password" name="cf_token" class="p2s-input" autocomplete="off" placeholder="Cloudflare API token" style="max-width:360px" /> ';
 			submit_button( 'Connect', 'primary', 'submit', false );
 			echo '</form>';
 			echo '<p class="p2s-dim">The token is stored obfuscated and used only from your server. It is never shown again.</p>';
 		} else {
-			echo '<p>Connected to zone for <code>' . esc_html( isset( $cfg['domain'] ) ? $cfg['domain'] : '' ) . '</code>.</p>';
+			echo '<p>Connected to the zone for <code>' . esc_html( isset( $cfg['domain'] ) ? $cfg['domain'] : '' ) . '</code>.</p>';
 			if ( ! empty( $cfg['rule_on'] ) ) {
 				echo '<p class="p2s-verify p2s-ok-text">&#10003; The edge filter rule is deployed at Cloudflare.</p>';
 				$this->post_form( 'p2s_cf_remove', 'p2s_cf', 'Remove edge rule', 'secondary' );
@@ -473,12 +569,12 @@ class P2S_Admin {
 	}
 
 	protected function render_lockdown( $lock, $r ) {
-		echo '<div class="p2s-card"><h2>Lockdown <span class="p2s-pill p2s-bad">emergency</span></h2>';
+		echo '<div class="p2s-card p2s-danger-card">';
+		$this->card_head( 'lock', 'Lockdown', $this->pill( 'bad', 'emergency' ) );
 		echo '<p>The panic button. Takes the site offline for everyone except your IP, and shows a maintenance page. Because it blocks at the web server before PHP runs, it genuinely stops the exploit while you patch. Instantly reversible.</p>';
 
-		$behind_cf = ! empty( $r['proxy']['cloudflare'] );
-		if ( $behind_cf ) {
-			echo '<p class="p2s-honest-inline"><strong>You are behind Cloudflare.</strong> Server-level IP rules see Cloudflare\'s IPs, not yours, so this .htaccess lockdown may not reliably allow you in. Prefer a Cloudflare-side block, or Cloudflare\'s "Under Attack" mode, while behind Cloudflare.</p>';
+		if ( ! empty( $r['proxy']['cloudflare'] ) ) {
+			echo '<p class="p2s-honest-inline"><strong>You are behind Cloudflare.</strong> Server-level IP rules see Cloudflare\'s IPs, not yours, so this .htaccess lockdown may not reliably let you in. Prefer a Cloudflare-side block, or Cloudflare\'s "Under Attack" mode, while behind Cloudflare.</p>';
 		}
 
 		if ( $lock->is_active() ) {
@@ -491,83 +587,18 @@ class P2S_Admin {
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'This takes your site offline for everyone except your IP. Continue?\');">';
 			echo '<input type="hidden" name="action" value="p2s_lock_enable" />';
 			wp_nonce_field( 'p2s_lock' );
-			echo '<input type="text" name="extra_ip" class="regular-text" placeholder="Extra IP (optional)" /> ';
+			echo '<input type="text" name="extra_ip" class="p2s-input" placeholder="Extra IP (optional)" style="max-width:220px" /> ';
 			submit_button( 'Take the site offline', 'delete', 'submit', false );
 			echo '</form>';
 		}
 		echo '</div>';
 	}
 
-	protected function render_pack( $engine ) {
-		$s = $engine->summary( 'php2shell' );
-		echo '<div class="p2s-card"><h2>Threat definitions</h2>';
-
-		if ( empty( $s['loaded'] ) ) {
-			if ( empty( $s['can_verify'] ) ) {
-				echo '<p class="p2s-bad-text">&#9888; The rule pack could not be verified on this server (the OpenSSL extension is missing), so signed pack updates are unavailable. The plugin is using its built-in defaults.</p>';
-			} else {
-				echo '<p class="p2s-bad-text">&#9888; No valid rule pack is loaded. The plugin is using its built-in defaults.</p>';
-			}
-			echo '</div>';
-			return;
-		}
-
-		$cves = is_array( $s['cve'] ) ? implode( ', ', $s['cve'] ) : '';
-		echo '<table class="widefat striped p2s-table"><tbody>';
-		$this->row( 'Threat', esc_html( $s['name'] ) . ' <span class="p2s-pill p2s-bad">' . esc_html( $s['severity'] ) . '</span>' );
-		$this->row( 'CVEs', esc_html( $cves ) );
-		$this->row( 'Definition version', esc_html( $s['pack_version'] ) . ' <span class="p2s-dim">(' . esc_html( $s['updated'] ) . ')</span>' );
-		$sig_label = 'Signature verified <span class="p2s-pill p2s-ok">trusted</span>';
-		$this->row( 'Source', esc_html( ucfirst( $s['source'] ) ) . ' &middot; ' . $sig_label );
-		echo '</tbody></table>';
-		echo '<p class="p2s-dim">Rule packs are cryptographically signed. The plugin refuses any pack that is unsigned or has been tampered with.</p>';
-		echo '</div>';
-	}
-
-	protected function render_control( $shield, $v ) {
-		echo '<div class="p2s-card">';
-		echo '<h2>The shield</h2>';
-
-		if ( $shield->is_active() ) {
-			// Verification state.
-			if ( 'live' === $v['phase'] ) {
-				echo '<p class="p2s-verify p2s-ok-text">&#10003; Shield is on and <strong>verified live</strong> — the settings are in effect right now.</p>';
-			} elseif ( 'pending' === $v['phase'] ) {
-				echo '<p class="p2s-verify p2s-warn-text">&#9203; Shield is written. PHP caches settings, so it should take effect within about ' . esc_html( (string) $v['remaining'] ) . ' seconds. Re-scan after that to confirm.</p>';
-			} else {
-				echo '<p class="p2s-verify p2s-bad-text">&#9888; Shield is written, but PHP is <strong>not applying it</strong>. Your host may lock these settings. Apply the snippet below at host level, or contact your host.</p>';
-			}
-
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			echo '<input type="hidden" name="action" value="p2s_disable" />';
-			wp_nonce_field( 'p2s_disable' );
-			submit_button( 'Turn off the shield', 'secondary', 'submit', false );
-			echo '</form>';
-			echo '<p class="p2s-dim">Turning it off restores your original configuration exactly.</p>';
-
-		} elseif ( $shield->can_autowrite() ) {
-			echo '<p>The plugin can turn on the shield for you by writing <code>' . esc_html( $shield->target() ) . '</code>. It keeps a backup, and you can undo it any time.</p>';
-			if ( 'htaccess' === $shield->method() ) {
-				echo '<p class="p2s-dim">Directives are wrapped in <code>IfModule</code> guards, so they cannot take your site down even if something is unusual about the server.</p>';
-			}
-			echo '<p class="p2s-honest-inline"><strong>Heads up:</strong> one of the settings is <code>memory_limit = -1</code> (unlimited). It is PHP\'s own recommendation for this bug, but on a tiny server one runaway script could use a lot of memory. You can undo it any time.</p>';
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			echo '<input type="hidden" name="action" value="p2s_enable" />';
-			wp_nonce_field( 'p2s_enable' );
-			submit_button( 'Turn on the shield', 'primary', 'submit', false );
-			echo '</form>';
-
-		} else {
-			echo '<p>On this server the plugin cannot write the shield itself. Copy the snippet below and apply it (or ask your host to). After it is in place, re-scan and the status will update.</p>';
-		}
-
-		echo '</div>';
-	}
-
 	protected function render_keys() {
 		$keys    = new P2S_Keys();
 		$present = $keys->detect();
-		echo '<div class="p2s-card"><h2>Remote access keys</h2>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'key', 'Remote access keys' );
 		echo '<p>These connectors are a master key to your whole site — whoever holds the key can install plugins and run code. In October 2026, stolen UpdraftCentral keys were used to plant backdoors. Cut any you do not recognise or need.</p>';
 		if ( empty( $present ) ) {
 			echo '<p class="p2s-verify p2s-ok-text">&#10003; No remote-management connectors detected.</p></div>';
@@ -581,7 +612,7 @@ class P2S_Admin {
 				. wp_nonce_field( 'p2s_keys', '_wpnonce', true, false )
 				. get_submit_button( 'Deactivate', 'secondary small', 'submit', false )
 				. '</form>';
-			echo '<tr><th scope="row">' . esc_html( $c['name'] ) . '</th><td>' . $btn . '<p class="p2s-dim" style="margin:6px 0 0">' . wp_kses( $c['revoke'], array() ) . '</p></td></tr>';
+			echo '<tr><th scope="row">' . esc_html( $c['name'] ) . '</th><td>' . $btn . '<p class="p2s-dim" style="margin:6px 0 0">' . wp_kses( $c['revoke'], array() ) . '</p></td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- composed above.
 		}
 		echo '</tbody></table>';
 		echo '<p class="p2s-dim">Deactivating is reversible — it switches the connector plugin off, which severs remote control immediately.</p></div>';
@@ -589,7 +620,8 @@ class P2S_Admin {
 
 	protected function render_scan() {
 		$res = p2s_opt_get( 'p2s_scan_result' );
-		echo '<div class="p2s-card"><h2>Breach check</h2>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'search', 'Breach check' );
 		echo '<p>PHP2Shell runs as your web user, and attacks started before the patch — so some sites are already compromised. This checks the common signs. It only reports; it never deletes anything.</p>';
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -607,7 +639,6 @@ class P2S_Admin {
 		echo '<p class="p2s-dim">Last scan: ' . esc_html( gmdate( 'Y-m-d H:i', $res['time'] ) ) . ' UTC</p>';
 		$clean = true;
 
-		// Core.
 		if ( is_array( $res['core'] ) && ! empty( $res['core']['ok'] ) ) {
 			$mod = array_merge( $res['core']['modified'], $res['core']['missing'] );
 			if ( ! empty( $mod ) ) {
@@ -618,7 +649,6 @@ class P2S_Admin {
 			echo '<p class="p2s-dim">Core checksums could not be fetched this run.</p>';
 		}
 
-		// Plugins.
 		if ( ! empty( $res['plugins'] ) ) {
 			foreach ( $res['plugins'] as $p ) {
 				if ( ! empty( $p['verifiable'] ) ) {
@@ -631,13 +661,11 @@ class P2S_Admin {
 			}
 		}
 
-		// Uploads.
 		if ( ! empty( $res['uploads'] ) ) {
 			$clean = false;
 			$this->finding( 'bad', 'PHP files found in uploads (should never happen)', $res['uploads'] );
 		}
 
-		// Recent admins.
 		if ( ! empty( $res['admins'] ) ) {
 			$clean = false;
 			$list  = array();
@@ -668,7 +696,8 @@ class P2S_Admin {
 
 	protected function render_secrets() {
 		$secrets = new P2S_Secrets();
-		echo '<div class="p2s-card"><h2>Secrets reset</h2>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'refresh', 'Secrets reset' );
 		echo '<p>PHP2Shell can leak memory that held passwords and keys. Rotating your WordPress security keys makes any stolen login session useless and signs everyone out.</p>';
 		echo '<p class="p2s-honest-inline"><strong>This signs out every user, including you.</strong> You will need to log in again straight after. Your original wp-config.php is backed up first.</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'Rotate security keys now? Everyone will be signed out.\');">';
@@ -677,7 +706,7 @@ class P2S_Admin {
 		submit_button( 'Rotate security keys', 'primary', 'submit', false );
 		echo '</form>';
 
-		echo '<h3 style="margin-top:18px">Also change these yourself</h3>';
+		echo '<h3>Also change these yourself</h3>';
 		echo '<p class="p2s-dim">The plugin cannot rotate these for you. If you think you were breached, change each one:</p>';
 		echo '<ul class="p2s-notes">';
 		foreach ( $secrets->checklist() as $item ) {
@@ -686,18 +715,43 @@ class P2S_Admin {
 		echo '</ul></div>';
 	}
 
+	protected function render_pack( $engine ) {
+		$s = $engine->summary( 'php2shell' );
+		echo '<div class="p2s-card">';
+		$this->card_head( 'file', 'Threat definitions' );
+
+		if ( empty( $s['loaded'] ) ) {
+			if ( empty( $s['can_verify'] ) ) {
+				echo '<p class="p2s-bad-text">&#9888; The rule pack could not be verified on this server (the OpenSSL extension is missing), so signed pack updates are unavailable. The plugin is using its built-in defaults.</p>';
+			} else {
+				echo '<p class="p2s-bad-text">&#9888; No valid rule pack is loaded. The plugin is using its built-in defaults.</p>';
+			}
+			echo '</div>';
+			return;
+		}
+
+		$cves = is_array( $s['cve'] ) ? implode( ', ', $s['cve'] ) : '';
+		echo '<table class="widefat striped p2s-table"><tbody>';
+		$this->row( 'Threat', esc_html( $s['name'] ) . $this->pill( 'bad', $s['severity'] ) );
+		$this->row( 'CVEs', esc_html( $cves ) );
+		$this->row( 'Definition version', esc_html( $s['pack_version'] ) . ' <span class="p2s-dim">(' . esc_html( $s['updated'] ) . ')</span>' );
+		$this->row( 'Source', esc_html( ucfirst( $s['source'] ) ) . ' &middot; Signature verified' . $this->pill( 'ok', 'trusted' ) );
+		echo '</tbody></table>';
+		echo '<p class="p2s-dim">Rule packs are cryptographically signed. The plugin refuses any pack that is unsigned or has been tampered with.</p>';
+		echo '</div>';
+	}
+
 	protected function render_environment( $r ) {
-		echo '<div class="p2s-card"><h2>Your environment</h2>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'server', 'Your environment' );
 		echo '<table class="widefat striped p2s-table"><tbody>';
 
-		$php_val = esc_html( $r['php']['version'] ) . ' &middot; ' . esc_html( $r['php']['sapi_label'] );
-		$php_val .= $r['php']['is_fixed']
-			? ' <span class="p2s-pill p2s-ok">fixed version</span>'
-			: ' <span class="p2s-pill p2s-bad">affected</span>';
+		$php_val  = esc_html( $r['php']['version'] ) . ' &middot; ' . esc_html( $r['php']['sapi_label'] );
+		$php_val .= $r['php']['is_fixed'] ? $this->pill( 'ok', 'fixed version' ) : $this->pill( 'bad', 'affected' );
 		$this->row( 'PHP', $php_val );
 		$this->row( 'Web server', esc_html( $r['server']['label'] ) . ' <span class="p2s-dim">(' . esc_html( $r['server']['software'] ) . ')</span>' );
 		$this->row( 'In front of the site', esc_html( $r['proxy']['label'] ) );
-		$this->row( 'Shield method here', esc_html( $r['shield']['method_label'] ) );
+		$this->row( 'Protection method here', esc_html( $r['shield']['method_label'] ) );
 
 		$mem = $r['mitigations']['memory_limit'];
 		$up  = $r['mitigations']['upload_progress'];
@@ -712,10 +766,10 @@ class P2S_Admin {
 	}
 
 	protected function render_snippet( $shield ) {
-		$snippet = $shield->snippet();
-		echo '<div class="p2s-card"><h2>Manual snippet</h2>';
-		echo '<p class="p2s-dim">For your host, or if you prefer to apply it yourself (for example at PHP-FPM pool level, which survives everything).</p>';
-		echo '<textarea class="p2s-snippet" rows="' . esc_attr( (string) ( substr_count( $snippet, "\n" ) + 1 ) ) . '" readonly="readonly" onclick="this.select()">' . esc_textarea( $snippet ) . '</textarea>';
+		echo '<div class="p2s-card">';
+		$this->card_head( 'file', 'Manual snippet' );
+		echo '<p class="p2s-dim">For your host, or if you prefer to apply it yourself (for example at PHP-FPM pool level, which survives everything). Click the box to select all, then copy.</p>';
+		$this->snippet_box( $shield->snippet() );
 		echo '</div>';
 	}
 
@@ -724,45 +778,86 @@ class P2S_Admin {
 	}
 
 	protected function tick( $ok ) {
-		return $ok ? '<span class="p2s-pill p2s-ok">on</span>' : '<span class="p2s-pill p2s-bad">not set</span>';
+		return $ok ? $this->pill( 'ok', 'on' ) : $this->pill( 'bad', 'not set' );
 	}
 
 	protected function css() {
 		return '
-		.p2s-wrap{max-width:900px}
-		.p2s-hero{display:flex;align-items:center;gap:16px;background:#0b0f10;color:#fff;border-radius:12px;padding:20px 24px;margin:16px 0}
-		.p2s-hero-mark{font-size:34px;line-height:1}
-		.p2s-hero-text h1{color:#fff;margin:0;font-size:24px}
-		.p2s-hero-text p{color:#9aa0a6;margin:2px 0 0}
-		.p2s-badge{margin-left:auto;font-weight:700;padding:6px 14px;border-radius:999px;font-size:13px}
-		.p2s-card{background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:18px 20px;margin:16px 0}
-		.p2s-status{display:flex;gap:16px;align-items:flex-start}
-		.p2s-status-body h2{margin-top:0}
-		.p2s-light{width:18px;height:18px;border-radius:50%;margin-top:6px;flex:0 0 auto;box-shadow:0 0 0 4px rgba(0,0,0,.05)}
-		.p2s-notes{margin:8px 0 0;padding-left:18px;color:#50575e}
-		.p2s-honest{background:#fff8e5;border:1px solid #f0d58a;border-left:4px solid #dba617;border-radius:8px;padding:12px 16px;margin:16px 0;color:#4a3d12}
-		.p2s-honest-inline{background:#fff8e5;border:1px solid #f0d58a;border-radius:8px;padding:10px 14px;color:#4a3d12}
-		.p2s-verify{font-size:15px;padding:10px 14px;border-radius:8px;background:#f6f7f7}
-		.p2s-ok-text{color:#137333}.p2s-warn-text{color:#9a6700}.p2s-bad-text{color:#c5221f}
-		.p2s-finding{border-left:4px solid currentColor;padding:8px 14px;margin:10px 0;background:#f6f7f7;border-radius:0 8px 8px 0}
-		.p2s-finding ul{color:#50575e}
-		.p2s-table th{width:220px}
-		.p2s-pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;vertical-align:middle}
-		.p2s-dim{color:#8c8f94}
-		.p2s-rescan{margin-top:12px}
-		.p2s-snippet{width:100%;font-family:Menlo,Consolas,monospace;font-size:12px;background:#0b0f10;color:#d6f5d6;border-radius:8px;padding:12px;border:0}
-		.p2s-ok{background:#e6f4ea;color:#137333}
-		.p2s-warn{background:#fef7e0;color:#9a6700}
-		.p2s-bad{background:#fce8e6;color:#c5221f}
+		.p2s-wrap{max-width:1040px;margin-right:20px}
+		.p2s-wrap *{box-sizing:border-box}
+		/* hero */
+		.p2s-hero{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#0b0f10 0%,#101f24 60%,#0b0f10 100%);color:#fff;border-radius:18px;padding:26px 30px;margin:18px 0 22px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+		.p2s-hero-logo{width:64px;height:64px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.35);border-radius:16px}
+		.p2s-logo{width:38px;height:38px}
+		.p2s-hero-text h1{color:#fff;margin:0;font-size:26px;font-weight:800;letter-spacing:-.3px}
+		.p2s-hero-text p{color:#9aa7ad;margin:4px 0 0;font-size:15px}
+		.p2s-badge{margin-left:auto;font-weight:700;padding:8px 18px;border-radius:999px;font-size:13px;letter-spacing:.3px}
+		/* group dividers */
+		.p2s-group{margin:30px 0 6px;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#8a9096;border-bottom:1px solid #e3e6ea;padding-bottom:8px}
+		/* cards */
+		.p2s-card{background:#fff;border:1px solid #e3e6ea;border-radius:16px;padding:22px 24px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 18px rgba(0,0,0,.03)}
+		.p2s-card p{font-size:14.5px;line-height:1.6;color:#3c434a}
+		.p2s-card code{background:#f3f5f7;border-radius:5px;padding:1px 6px;font-size:12.5px;color:#0b0f10}
+		.p2s-head{display:flex;align-items:center;gap:11px;margin:0 0 12px}
+		.p2s-head h2{margin:0;font-size:18px;font-weight:700;color:#11181c}
+		.p2s-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#eef6ef;color:#1a7f37;flex:0 0 auto}
+		.p2s-ic svg{width:19px;height:19px}
+		.p2s-card h3{font-size:14px;font-weight:700;color:#11181c;margin:18px 0 8px}
+		/* primary card */
+		.p2s-primary{border:1px solid #bfe3c6;background:linear-gradient(180deg,#f3fbf5 0%,#ffffff 70%)}
+		.p2s-primary .p2s-ic{background:#1a7f37;color:#fff}
+		.p2s-danger-card{border-color:#f3c6c3}
+		.p2s-danger-card .p2s-ic{background:#fdecea;color:#c5221f}
+		/* status */
+		.p2s-status{display:flex;gap:18px;align-items:flex-start;border-left-width:5px;border-left-style:solid}
+		.p2s-status-body h2{margin:0 0 4px;font-size:22px;font-weight:800;color:#11181c}
+		.p2s-light{width:22px;height:22px;border-radius:50%;margin-top:6px;flex:0 0 auto}
+		.p2s-notes{margin:10px 0 0;padding-left:20px;color:#5a626a}
+		.p2s-notes li{margin:3px 0;font-size:13.5px}
+		/* honesty / inline note */
+		.p2s-honest{background:#fff8e6;border:1px solid #f0d58a;border-left:4px solid #dba617;border-radius:12px;padding:14px 18px;margin:14px 0;color:#5a4a16;font-size:14px}
+		.p2s-honest-inline{background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:11px 15px;color:#5a4a16;font-size:13.5px}
+		/* verify lines */
+		.p2s-verify{font-size:14.5px;padding:12px 16px;border-radius:10px;background:#f4f6f8;margin:12px 0}
+		.p2s-ok-text{color:#15803d}.p2s-warn-text{color:#92600a}.p2s-bad-text{color:#b42318}
+		.p2s-finding{border-left:4px solid currentColor;padding:10px 16px;margin:12px 0;background:#f7f8fa;border-radius:0 10px 10px 0}
+		.p2s-finding ul{color:#5a626a}
+		/* table */
+		.p2s-table{border-radius:10px;overflow:hidden;border:1px solid #e3e6ea;margin-top:6px}
+		.p2s-table th{width:230px;font-size:13.5px}
+		.p2s-table td{font-size:13.5px}
+		/* pills & dim */
+		.p2s-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;vertical-align:middle;letter-spacing:.2px}
+		.p2s-dim{color:#8a9096;font-size:13px}
+		.p2s-rescan{margin-top:14px}
+		.p2s-input{width:100%;max-width:520px;border:1px solid #cfd4da;border-radius:9px;padding:9px 12px;font-size:13.5px}
+		.p2s-foot{text-align:center;color:#9aa0a6;font-size:12.5px;margin:26px 0 8px}
+		.p2s-foot a{color:#1a7f37;text-decoration:none}
+		/* how it works */
+		.p2s-how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:10px 0 4px}
+		.p2s-step{background:#fff;border:1px solid #e3e6ea;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+		.p2s-step-ic{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#1a7f37,#2ea44f);color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+		.p2s-step-ic .p2s-ic{width:auto;height:auto;background:none;color:#fff}
+		.p2s-step-ic svg{width:23px;height:23px}
+		.p2s-step h3{margin:0 0 6px;font-size:15px;font-weight:700;color:#11181c}
+		.p2s-step p{margin:0;font-size:13.5px;line-height:1.55;color:#5a626a}
+		@media (max-width:860px){.p2s-how{grid-template-columns:1fr}}
+		/* tones */
+		.p2s-ok{background:#e6f4ea;color:#15803d}
+		.p2s-warn{background:#fef4e2;color:#92600a}
+		.p2s-bad{background:#fde8e6;color:#b42318}
 		.p2s-badge.p2s-ok{background:#1e8e3e;color:#fff}
 		.p2s-badge.p2s-warn{background:#f29900;color:#1b1b1b}
-		.p2s-badge.p2s-bad{background:#d93025;color:#fff}
-		.p2s-status.p2s-ok .p2s-light{background:#1e8e3e}
-		.p2s-status.p2s-warn .p2s-light{background:#f29900}
-		.p2s-status.p2s-bad .p2s-light{background:#d93025}
-		.p2s-status.p2s-ok{border-color:#9fd8ae}
-		.p2s-status.p2s-warn{border-color:#f3d07a}
-		.p2s-status.p2s-bad{border-color:#f1b0ab}
+		.p2s-badge.p2s-bad{background:#e5484d;color:#fff}
+		.p2s-status.p2s-ok{border-left-color:#1e8e3e}.p2s-status.p2s-ok .p2s-light{background:#1e8e3e}
+		.p2s-status.p2s-warn{border-left-color:#f29900}.p2s-status.p2s-warn .p2s-light{background:#f29900}
+		.p2s-status.p2s-bad{border-left-color:#e5484d}.p2s-status.p2s-bad .p2s-light{background:#e5484d}
+		/* buttons */
+		.p2s-wrap .button{border-radius:8px;font-weight:600;padding:4px 16px;height:auto;line-height:2.1}
+		.p2s-wrap .button-primary{background:#1a7f37;border-color:#166e30;box-shadow:none;text-shadow:none}
+		.p2s-wrap .button-primary:hover,.p2s-wrap .button-primary:focus{background:#15803d;border-color:#135c2b}
+		.p2s-wrap .button.delete,.p2s-wrap .button-link-delete{background:#e5484d;border:1px solid #c5221f;color:#fff;border-radius:8px;padding:4px 16px;font-weight:600;text-decoration:none}
+		.p2s-wrap .button.delete:hover,.p2s-wrap .button-link-delete:hover{background:#c5221f;color:#fff}
 		';
 	}
 }
