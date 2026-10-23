@@ -1,0 +1,29 @@
+{
+  "id": "php2shell",
+  "name": "PHP2Shell",
+  "severity": "critical",
+  "pack_version": "1.0.0",
+  "updated": "2026-10-23",
+  "cve": ["CVE-2026-109618", "CVE-2026-109619"],
+  "summary": "Two critical remote code execution flaws in PHP core (CVSS 9.2). Exploitable without authentication; can also leak memory containing secrets.",
+  "affects": {
+    "php_fixed": {
+      "8.2": "8.2.35",
+      "8.3": "8.3.36",
+      "8.4": "8.4.27",
+      "8.5": "8.5.12"
+    },
+    "eol_no_upstream_fix_below": "8.2"
+  },
+  "mitigations": {
+    "ini": {
+      "memory_limit": "-1",
+      "session.upload_progress.enabled": "0"
+    }
+  },
+  "advice": "Update PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). Until then, turn on the shield to apply PHP's recommended stopgap settings.",
+  "references": [
+    "https://www.php.net/",
+    "https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching"
+  ]
+}

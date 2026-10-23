@@ -1,0 +1,13 @@
+# NEVER commit signing private keys.
+keys/
+*.pem
+*-private.*
+
+# Build output
+dist/
+
+# OS / editor noise
+.DS_Store
+*.swp
+*.tmp
+*.p2s-tmp-*
