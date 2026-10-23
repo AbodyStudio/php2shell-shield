@@ -4,7 +4,7 @@ Tags: security, php2shell, hardening, vulnerability, cve
 Requires at least: 3.6
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,9 @@ https://github.com/AbodyStudio/php2shell-shield/issues .
 3. Signed threat definitions and the copy-paste snippet for your host.
 
 == Changelog ==
+
+= 1.3.4 =
+* Fix: the breach check no longer flags a harmless "Silence is golden." index.php in uploads (including the plugin's own backups folder) as a PHP file hiding in uploads. Empty or comment-only index.php guards - a convention WordPress core and many plugins use - are now skipped, while any file containing real executable PHP is still reported.
 
 = 1.3.3 =
 * Wider compatibility: lowered "Requires at least" to WordPress 3.6 so the plugin installs on very old sites (the ones most likely to still be on vulnerable PHP), and confirmed it on current WordPress. No feature uses an API newer than WordPress 3.6, so old and new sites are both covered. No behaviour change.

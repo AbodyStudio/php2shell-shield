@@ -176,7 +176,15 @@ class P2S_Scan {
 			);
 			foreach ( $it as $file ) {
 				if ( $file->isFile() && preg_match( $re, $file->getFilename() ) ) {
-					$found[] = str_replace( $dir, '', $file->getPathname() );
+					// A "Silence is golden." index.php is a harmless guard that
+					// WordPress core and many plugins (this one included) drop
+					// into upload subfolders. Skip it only when it is empty or
+					// comment-only — a real shell always has executable code and
+					// is still reported.
+					if ( 'index.php' === strtolower( $file->getFilename() ) && $this->is_harmless_php_guard( $file->getPathname() ) ) {
+						continue;
+					}
+					$found[] = str_replace( '\\', '/', str_replace( $dir, '', $file->getPathname() ) );
 					if ( count( $found ) >= $cap ) {
 						break;
 					}
@@ -187,6 +195,33 @@ class P2S_Scan {
 			return $found;
 		}
 		return $found;
+	}
+
+	/**
+	 * Is this .php file a harmless empty/comment-only guard (not a shell)?
+	 *
+	 * True only for a tiny file that is empty, or an open tag followed by
+	 * nothing but a single line/block comment and whitespace (the classic
+	 * "Silence is golden." index.php). Anything with executable PHP, or
+	 * anything larger than a stub, returns false and is still reported.
+	 *
+	 * @param string $path Absolute file path.
+	 * @return bool
+	 */
+	protected function is_harmless_php_guard( $path ) {
+		$size = @filesize( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- local stat, no FS-credential prompt wanted mid-scan.
+		if ( false === $size || $size > 512 ) {
+			return false;
+		}
+		$src = @file_get_contents( $path, false, null, 0, 512 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local read of a tiny file; WP_Filesystem would prompt for credentials mid-scan.
+		if ( false === $src ) {
+			return false;
+		}
+		$src = trim( $src );
+		if ( '' === $src ) {
+			return true;
+		}
+		return (bool) preg_match( '#^<\?php\s*((//|\#)[^\r\n]*|/\*.*?\*/)?\s*$#s', $src );
 	}
 
 	/* ---- fetch --------------------------------------------------------- */
