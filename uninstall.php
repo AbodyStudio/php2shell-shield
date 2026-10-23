@@ -27,6 +27,8 @@ $p2s_options = array(
 	'p2s_lock',
 	'p2s_lock_backup',
 	'p2s_scan_result',
+	'p2s_phpcheck_result',
+	'p2s_phpswitch_backup',
 );
 
 foreach ( $p2s_options as $p2s_opt ) {

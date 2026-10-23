@@ -3,7 +3,7 @@
  * Plugin Name:       PHP2Shell Shield
  * Plugin URI:        https://github.com/AbodyStudio/php2shell-shield
  * Description:        Reduces the risk of the PHP2Shell exploit (CVE-2026-109618 / CVE-2026-109619) on sites that cannot update PHP yet. A shield, not a cure — the only real fix is updating PHP.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 4.0
  * Requires PHP:      5.4
  * Author:            AbodyStudio
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'P2S_VERSION', '1.2.0' );
+define( 'P2S_VERSION', '1.3.0' );
 define( 'P2S_FILE', __FILE__ );
 define( 'P2S_DIR', plugin_dir_path( __FILE__ ) );
 define( 'P2S_URL', plugin_dir_url( __FILE__ ) );
@@ -39,6 +39,8 @@ require_once P2S_DIR . 'includes/class-scan.php';
 require_once P2S_DIR . 'includes/class-keys.php';
 require_once P2S_DIR . 'includes/class-secrets.php';
 require_once P2S_DIR . 'includes/class-updater.php';
+require_once P2S_DIR . 'includes/class-phpready.php';
+require_once P2S_DIR . 'includes/class-phpswitch.php';
 
 /**
  * Writable directory for installed/updated rule packs (under uploads).
@@ -96,6 +98,9 @@ function p2s_cf_client() {
 // GitHub auto-updater with signed-download verification. Added unconditionally
 // so update checks work during cron as well as in the admin.
 $GLOBALS['p2s_updater'] = new P2S_Updater();
+
+// PHP switcher — registers the verification probe endpoint used after a switch.
+$GLOBALS['p2s_phpswitch'] = new P2S_PhpSwitch();
 
 if ( is_admin() ) {
 	require_once P2S_DIR . 'admin/class-admin.php';

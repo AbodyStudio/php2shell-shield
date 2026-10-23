@@ -106,6 +106,34 @@ if ( ! function_exists( 'p2s_random_string' ) ) {
 	}
 }
 
+if ( ! function_exists( 'p2s_hash_equals' ) ) {
+	/**
+	 * Constant-time string compare. Uses hash_equals (PHP 5.6+) when available,
+	 * else a constant-time fallback for PHP 5.4/5.5.
+	 *
+	 * @param string $known Known string.
+	 * @param string $given User-supplied string.
+	 * @return bool
+	 */
+	function p2s_hash_equals( $known, $given ) {
+		if ( function_exists( 'hash_equals' ) ) {
+			// phpcs:ignore PHPCompatibility.FunctionUse.NewFunctions.hash_equalsFound -- guarded by function_exists; the fallback below covers PHP < 5.6.
+			return hash_equals( (string) $known, (string) $given );
+		}
+		$known = (string) $known;
+		$given = (string) $given;
+		$n     = strlen( $known );
+		if ( $n !== strlen( $given ) ) {
+			return false;
+		}
+		$r = 0;
+		for ( $i = 0; $i < $n; $i++ ) {
+			$r |= ord( $known[ $i ] ) ^ ord( $given[ $i ] );
+		}
+		return 0 === $r;
+	}
+}
+
 if ( ! function_exists( 'p2s_opt_get' ) ) {
 	/**
 	 * Option storage that uses WordPress when present, else an in-memory store

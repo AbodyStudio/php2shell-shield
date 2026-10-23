@@ -28,6 +28,8 @@ class P2S_Admin {
 		add_action( 'admin_post_p2s_scan_run', array( $this, 'handle_scan_run' ) );
 		add_action( 'admin_post_p2s_key_deactivate', array( $this, 'handle_key_deactivate' ) );
 		add_action( 'admin_post_p2s_secrets_rotate', array( $this, 'handle_secrets_rotate' ) );
+		add_action( 'admin_post_p2s_phpcheck', array( $this, 'handle_phpcheck' ) );
+		add_action( 'admin_post_p2s_phpswitch', array( $this, 'handle_phpswitch' ) );
 	}
 
 	public function menu() {
@@ -255,6 +257,32 @@ class P2S_Admin {
 		$this->back( ! empty( $res['ok'] ) ? 'secrets_done' : 'secrets_fail' );
 	}
 
+	public function handle_phpcheck() {
+		$this->guard( 'p2s_phpcheck' );
+		$target = isset( $_POST['target'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['target'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( ! preg_match( '/^\d+\.\d+$/', $target ) ) {
+			$target = null;
+		}
+		$ready = new P2S_PhpReady();
+		p2s_opt_set( 'p2s_phpcheck_result', $ready->run( $target ) );
+		$this->back( 'phpcheck_done' );
+	}
+
+	public function handle_phpswitch() {
+		$this->guard( 'p2s_phpswitch' );
+		$version = isset( $_POST['version'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['version'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( ! preg_match( '/^\d+\.\d+$/', $version ) ) {
+			$this->back( 'phpswitch_fail' );
+		}
+		$sw  = new P2S_PhpSwitch();
+		$res = $sw->switch_to( $version );
+		if ( ! empty( $res['ok'] ) ) {
+			$this->back( 'phpswitch_ok_' . str_replace( '.', '_', $version ) );
+		}
+		$reason = isset( $res['reason'] ) ? $res['reason'] : 'fail';
+		$this->back( 'phpswitch_' . $reason );
+	}
+
 	/* ---- notices ------------------------------------------------------- */
 
 	protected function notice() {
@@ -309,6 +337,21 @@ class P2S_Admin {
 			$this->admin_box( 'success', 'Security keys rotated. Everyone (including you) has been signed out — log in again. Stolen session cookies no longer work.' );
 		} elseif ( 'secrets_fail' === $n ) {
 			$this->admin_box( 'error', 'Could not rotate the keys automatically (wp-config.php may not be writable, or the keys are defined elsewhere). Nothing was changed.' );
+		} elseif ( 'phpcheck_done' === $n ) {
+			$this->admin_box( 'success', 'Compatibility check complete. Results are below.' );
+		} elseif ( 0 === strpos( $n, 'phpswitch_ok_' ) ) {
+			$ver = str_replace( '_', '.', substr( $n, strlen( 'phpswitch_ok_' ) ) );
+			$this->admin_box( 'success', 'PHP switched to ' . $ver . ' and your site was confirmed working on it. Please click around to double-check, especially forms and checkout.' );
+		} elseif ( 'phpswitch_reverted' === $n ) {
+			$this->admin_box( 'error', 'The switch was automatically rolled back: your site did not come up cleanly on the new PHP, so your original PHP version is still active. Run the compatibility check to see what needs fixing first.' );
+		} elseif ( 'phpswitch_no_handler' === $n ) {
+			$this->admin_box( 'error', 'This site does not select PHP via .htaccess, so the plugin cannot switch it here. Use cPanel MultiPHP Manager (see below).' );
+		} elseif ( 'phpswitch_not_installed' === $n ) {
+			$this->admin_box( 'error', 'That PHP version is not installed on this server.' );
+		} elseif ( 'phpswitch_not_writable' === $n ) {
+			$this->admin_box( 'error', 'The plugin could not write .htaccess, so PHP was not switched.' );
+		} elseif ( 0 === strpos( $n, 'phpswitch_' ) ) {
+			$this->admin_box( 'error', 'Could not switch PHP. Nothing was changed.' );
 		}
 	}
 
@@ -456,6 +499,11 @@ class P2S_Admin {
 
 		/* Primary action */
 		$this->render_control( $shield, $v );
+
+		/* Upgrade PHP — the real fix */
+		$this->group_title( 'Upgrade PHP — the real fix' );
+		$this->render_phpcheck( $r );
+		$this->render_phpswitch( $r );
 
 		/* How it works */
 		$this->group_title( 'How it works' );
@@ -759,6 +807,91 @@ class P2S_Admin {
 			echo '<li>' . esc_html( $item ) . '</li>';
 		}
 		echo '</ul></div>';
+	}
+
+	protected function render_phpcheck( $r ) {
+		$ready   = new P2S_PhpReady();
+		$res     = p2s_opt_get( 'p2s_phpcheck_result' );
+		$min     = $ready->min_target();
+		echo '<div class="p2s-card">';
+		$this->card_head( 'code', 'Can I upgrade safely?' );
+		echo '<p>Before you switch PHP (the real fix), this scans your active plugins and theme for code that newer PHP removed, so you know what &mdash; if anything &mdash; would break. The lowest PHP with an official PHP2Shell fix is <strong>' . esc_html( $min ) . '</strong>.</p>';
+
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="p2s_phpcheck" />';
+		wp_nonce_field( 'p2s_phpcheck' );
+		echo '<label style="font-size:13px;color:#5e6e76">Target PHP: <select name="target" class="p2s-input" style="width:auto;min-width:110px;display:inline-block;margin:0 8px">';
+		foreach ( array( '8.2', '8.3', '8.4', '8.5' ) as $t ) {
+			echo '<option value="' . esc_attr( $t ) . '"' . selected( $t, $min, false ) . '>PHP ' . esc_html( $t ) . '</option>';
+		}
+		echo '</select></label> ';
+		submit_button( is_array( $res ) ? 'Run check again' : 'Run compatibility check', 'primary', 'submit', false );
+		echo '</form>';
+
+		if ( is_array( $res ) ) {
+			$verdict = isset( $res['verdict'] ) ? $res['verdict'] : 'review';
+			$tt      = 'issues' === $verdict ? 'bad' : ( 'ready' === $verdict ? 'ok' : 'warn' );
+			$word    = 'issues' === $verdict ? 'Issues found — fix these before upgrading' : ( 'ready' === $verdict ? 'Looks compatible' : 'Probably OK — review the notes' );
+			echo '<p class="p2s-verify p2s-' . esc_attr( $tt ) . '-text" style="margin-top:14px"><strong>Target PHP ' . esc_html( $res['target'] ) . ': ' . esc_html( $word ) . '.</strong> '
+				. esc_html( (string) $res['blockers'] ) . ' blocker(s), ' . esc_html( (string) $res['reviews'] ) . ' to review, ' . esc_html( (string) $res['warnings'] ) . ' warning(s).</p>';
+			if ( ! empty( $res['sources'] ) ) {
+				foreach ( $res['sources'] as $src ) {
+					$lines = array();
+					foreach ( $src['files'] as $file => $findings ) {
+						foreach ( $findings as $f ) {
+							$tag     = 'blocker' === $f['sev'] ? '[blocker]' : ( 'warn' === $f['sev'] ? '[warning]' : '[review]' );
+							$lines[] = $file . ':' . $f['line'] . ' — ' . $f['label'] . ' ' . $tag;
+						}
+					}
+					$tone = 'bad';
+					$this->finding( $tone, $src['label'], $lines );
+				}
+			}
+			echo '<p class="p2s-dim">Last check: ' . esc_html( gmdate( 'Y-m-d H:i', $res['time'] ) ) . ' UTC. A clean result is a strong sign, not a promise — a quick test on a staging copy is the only certain check.</p>';
+		}
+		echo '</div>';
+	}
+
+	protected function render_phpswitch( $r ) {
+		$sw = new P2S_PhpSwitch();
+		$d  = $sw->detect();
+		echo '<div class="p2s-card">';
+		$this->card_head( 'server', 'Change PHP version' );
+
+		if ( 'htaccess' === $d['method'] && ! empty( $d['writable'] ) ) {
+			echo '<p>Your site selects PHP in <code>.htaccess</code> (cPanel EA4). The plugin can switch it here &mdash; it backs up <code>.htaccess</code>, switches, confirms your site comes up on the new version, and <strong>automatically rolls back</strong> if it does not.</p>';
+			echo '<p class="p2s-verify p2s-ok-text">Currently running <strong>PHP ' . esc_html( $d['current'] ) . '</strong>.</p>';
+
+			$options = $d['available'];
+			if ( empty( $options ) ) {
+				$options = array( '8.2', '8.3', '8.4' );
+			}
+			echo '<p class="p2s-honest-inline"><strong>Run the compatibility check above first.</strong> Switching to a version your code is not ready for could break the site — the auto-rollback is a safety net, not a guarantee. Pick a version your host has installed.</p>';
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'Switch PHP now? The plugin will auto-revert if your site does not come up on the new version.\');">';
+			echo '<input type="hidden" name="action" value="p2s_phpswitch" />';
+			wp_nonce_field( 'p2s_phpswitch' );
+			echo '<label style="font-size:13px;color:#5e6e76">Switch to: <select name="version" class="p2s-input" style="width:auto;min-width:110px;display:inline-block;margin:0 8px">';
+			foreach ( $options as $o ) {
+				if ( $o === $d['current'] ) {
+					continue;
+				}
+				echo '<option value="' . esc_attr( $o ) . '">PHP ' . esc_html( $o ) . '</option>';
+			}
+			echo '</select></label> ';
+			submit_button( 'Switch PHP (with auto-revert)', 'primary', 'submit', false );
+			echo '</form>';
+			if ( ! empty( $d['available'] ) ) {
+				echo '<p class="p2s-dim">Installed on this server: ' . esc_html( implode( ', ', $d['available'] ) ) . '.</p>';
+			}
+		} else {
+			$hint = $sw->multiphp_hint();
+			echo '<p>This site doesn\'t select PHP via <code>.htaccess</code>' . ( $d['cpanel'] ? ' (it\'s set at the server level)' : '' ) . ', so the plugin can\'t switch it directly. Change it from your hosting control panel:</p>';
+			echo '<ul class="p2s-notes"><li>Open <strong>cPanel &rarr; MultiPHP Manager</strong>.</li><li>Tick your domain, choose the new PHP version, and apply.</li><li>Then come back and re-scan &mdash; the status will update.</li></ul>';
+			if ( ! empty( $hint['url'] ) ) {
+				echo '<p><a class="button" href="' . esc_url( $hint['url'] ) . '" target="_blank" rel="noopener">Open cPanel</a> <span class="p2s-dim">(if your cPanel is on the standard port)</span></p>';
+			}
+		}
+		echo '</div>';
 	}
 
 	protected function render_pack( $engine ) {

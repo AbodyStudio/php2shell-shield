@@ -4,7 +4,7 @@ Tags: security, php2shell, hardening, vulnerability, cve
 Requires at least: 4.0
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,6 +101,11 @@ support@abodystudio.com or abodystudio@gmail.com, or open an issue at
 https://github.com/AbodyStudio/php2shell-shield/issues .
 
 == Changelog ==
+
+= 1.3.0 =
+* New "Upgrade PHP" tools — the real fix, made easy:
+  * Compatibility check: scans your active plugins and theme for code newer PHP removed, so you know what (if anything) would break before you switch.
+  * One-click PHP switch for cPanel (EA4) sites: backs up .htaccess, switches, confirms the site comes up on the new version, and auto-reverts if it does not. Other hosts get guided MultiPHP Manager steps.
 
 = 1.2.0 =
 * All-new dashboard: a modern, light "command deck" look — an animated shield core, a visual defense pipeline that shows requests being stopped before PHP, a live protection-layers meter, and refined cards. Reassuring and clear, not alarming.
