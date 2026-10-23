@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1544 1544" width="1544" height="1544" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#05100c"/>
+      <stop offset="55%" stop-color="#0a1b16"/>
+      <stop offset="100%" stop-color="#05100c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="80%" cy="42%" r="45%">
+      <stop offset="0%" stop-color="#1a7f4d" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1a7f4d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1544" height="1544" fill="url(#bg)"/>
+  <rect width="1544" height="1544" fill="url(#glow)"/>
+
+  <!-- banner band, centred in the square (crop the middle 500 rows) -->
+  <g transform="translate(0,522)">
+    <g stroke="#1a7f4d" stroke-opacity="0.10" stroke-width="1">
+      <path d="M0 125 H1544 M0 250 H1544 M0 375 H1544"/>
+      <path d="M250 0 V500 M500 0 V500 M750 0 V500 M1000 0 V500 M1250 0 V500"/>
+    </g>
+
+    <g transform="translate(120,130)">
+      <rect x="0" y="0" width="240" height="240" rx="48" fill="#0e241b" stroke="#2ea44f" stroke-opacity="0.5" stroke-width="2"/>
+      <g transform="translate(48,42) scale(6)">
+        <path d="M12 2 L4 5 V11 C4 16.2 7.4 20.6 12 22 C16.6 20.6 20 16.2 20 11 V5 Z" fill="none" stroke="#45ff9d" stroke-width="1.7" stroke-linejoin="round"/>
+        <path d="M8.5 11.8 L11 14.3 L15.8 9" fill="none" stroke="#45ff9d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+    </g>
+
+    <text x="430" y="212" fill="#ffffff" font-size="104" font-weight="700" letter-spacing="-1">PHP2Shell Shield</text>
+    <text x="434" y="286" fill="#8fe7b6" font-size="40" font-weight="600" letter-spacing="2">WORDPRESS SECURITY PLUGIN</text>
+    <text x="434" y="344" fill="#c7d3cd" font-size="36" font-weight="400">Block the exploit before PHP runs — a shield, not a cure.</text>
+    <text x="434" y="406" fill="#5f7a70" font-size="27" font-weight="400" font-family="Menlo, monospace">CVE-2026-109618 / 109619</text>
+  </g>
+</svg>

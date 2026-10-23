@@ -61,14 +61,31 @@ The bug fires while PHP is still reading the request — before WordPress or any
 
 ## Features
 
-- **Detection** — PHP version, SAPI (FPM/CGI/mod_php/LiteSpeed), web server, Cloudflare; a plain Exposed / Shielded / Patched / Needs-host status.
-- **Shield** — writes PHP's recommended stopgap settings (`memory_limit=-1`, `session.upload_progress.enabled=0`) to `.user.ini` or `.htaccess`, verified and reversible.
-- **Edge filter** — blocks multipart POSTs except on an allowlist, via `.htaccess`, the Cloudflare API, or a generated nginx snippet.
-- **Lockdown** — takes the site offline except your IP, before PHP runs, with a maintenance page.
-- **Breach check** — core & plugin checksums vs WordPress.org, uploads PHP scan, recent admins. Report-only.
-- **Remote key audit** — detects UpdraftCentral / ManageWP / MainWP / InfiniteWP / Jetpack and lets you cut them.
-- **Secrets reset** — rotates WordPress auth keys/salts safely, plus a manual checklist.
+Every feature is user-initiated, reversible, and shown plainly — the plugin never claims more safety than it delivers.
+
+### See where you stand
+- **Live detection & status** — your PHP version and how PHP runs (FPM / CGI / mod_php / LiteSpeed), the web server, and whether Cloudflare is in front, summed up as one status: **Exposed / Shielded / Patched / Needs host action**.
+- **Defense pipeline** — a visual of how a request is handled, showing attacks stopped *before PHP runs*.
+- **Protection-layers meter** — how many of your defences are active, at a glance.
+
+### Protect (before PHP runs)
+- **One-click shield** — writes PHP's own recommended stopgap settings (`memory_limit=-1`, `session.upload_progress.enabled=0`) to `.user.ini` or `.htaccess`, then **verifies on the next request** that they took effect. Backed up and reversible, with `IfModule` guards so a bad `.htaccess` can't take the site down.
+- **Edge request filter** — blocks upload-style requests except on an editable allowlist, applied via `.htaccess`, the **Cloudflare API** (non-destructively — your other rules are untouched), or a generated **nginx** snippet.
+- **Lockdown** — the panic button: takes the site offline except your IP, with a maintenance page, blocking at the web server before PHP runs. Instantly reversible.
+
+### Check & recover (assume some sites are already hit)
+- **Breach check** — compares WordPress **core and plugin** files against WordPress.org checksums, scans **uploads** for hidden PHP, and lists **admins created recently**. Report-only — it never deletes anything.
+- **Remote access key audit** — finds master-key connectors (**UpdraftCentral, ManageWP, MainWP, InfiniteWP, Jetpack**) and lets you cut any of them in one click.
+- **Secrets reset** — rotates your WordPress auth keys/salts in `wp-config.php` (so stolen sessions stop working), with a backup and a checklist of what you must change yourself.
+
+### Upgrade PHP — the real fix
+- **Compatibility check** — scans your active plugins and theme for code newer PHP *removed* (create_function, each(), mysql_*, …), reads declared `Requires PHP`, and tells you plainly whether you're ready to upgrade — with the exact files and lines if not.
+- **One-click PHP switch (cPanel EA4)** — where the PHP version lives in `.htaccess`, switch it with a backup, a loopback check that the site comes up on the new version, and **automatic rollback** if it doesn't. Other hosts get guided MultiPHP Manager steps.
+
+### Built right
 - **Signed rule packs** — threat definitions load from an RSA-SHA256-signed pack; unsigned or tampered packs are refused.
+- **Signed self-updates** (GitHub build) — updates verify the downloaded zip's signature before installing. (The WordPress.org build updates through WordPress.org instead.)
+- **PHP 5.4+ compatible**, atomic and reversible writes, no data sent anywhere except the services listed below.
 
 ## Screenshots
 
