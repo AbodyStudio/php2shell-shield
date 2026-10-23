@@ -101,6 +101,7 @@ Every feature is user-initiated, reversible, and shown plainly — the plugin ne
 
 ## Compatibility
 
+- **WordPress 3.6 → current** — deliberately wide: it installs on very old sites (the ones most likely to still run vulnerable PHP) *and* on the latest WordPress, so new sites stay monitored too. No feature uses an API newer than WordPress 3.6.
 - **PHP 5.4+** (the oldest affected PHP version) — verified with PHPCompatibility against `testVersion 5.4-`.
 - **Apache / LiteSpeed** — full feature set. **nginx / IIS** — detection + generated snippets. **Cloudflare** — full edge rule via API.
 

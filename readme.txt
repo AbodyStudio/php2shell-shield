@@ -1,10 +1,10 @@
 === PHP2Shell Shield ===
 Contributors: abodystudio
 Tags: security, php2shell, hardening, vulnerability, cve
-Requires at least: 4.0
+Requires at least: 3.6
 Tested up to: 7.1
 Requires PHP: 5.4
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,9 @@ https://github.com/AbodyStudio/php2shell-shield/issues .
 3. Signed threat definitions and the copy-paste snippet for your host.
 
 == Changelog ==
+
+= 1.3.3 =
+* Wider compatibility: lowered "Requires at least" to WordPress 3.6 so the plugin installs on very old sites (the ones most likely to still be on vulnerable PHP), and confirmed it on current WordPress. No feature uses an API newer than WordPress 3.6, so old and new sites are both covered. No behaviour change.
 
 = 1.3.2 =
 * Code-quality and WordPress.org compliance pass (Plugin Check): added direct-access guards to every file, sanitised $_SERVER reads, replaced mt_rand/cURL with WordPress APIs, documented the deliberate direct filesystem operations, and confirmed nonces on every action. No behaviour change.

@@ -3,8 +3,8 @@
  * Plugin Name:       PHP2Shell Shield
  * Plugin URI:        https://github.com/AbodyStudio/php2shell-shield
  * Description:        Reduces the risk of the PHP2Shell exploit (CVE-2026-109618 / CVE-2026-109619) on sites that cannot update PHP yet. A shield, not a cure — the only real fix is updating PHP.
- * Version:           1.3.2
- * Requires at least: 4.0
+ * Version:           1.3.3
+ * Requires at least: 3.6
  * Requires PHP:      5.4
  * Author:            AbodyStudio
  * Author URI:        https://abodystudio.com
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'P2S_VERSION', '1.3.2' );
+define( 'P2S_VERSION', '1.3.3' );
 define( 'P2S_FILE', __FILE__ );
 define( 'P2S_DIR', plugin_dir_path( __FILE__ ) );
 define( 'P2S_URL', plugin_dir_url( __FILE__ ) );
