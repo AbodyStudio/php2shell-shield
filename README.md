@@ -1,6 +1,25 @@
-# PHP2Shell Shield
+<p align="center">
+  <img src="assets/banner.png" alt="PHP2Shell Shield — WordPress Security Plugin" width="720">
+</p>
 
-**Risk reduction for the [PHP2Shell](https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching) exploit (CVE-2026-109618 / CVE-2026-109619) on WordPress sites that cannot update PHP yet.**
+<p align="center">
+  <strong>Risk reduction for the <a href="https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching">PHP2Shell</a> exploit (CVE-2026-109618 / CVE-2026-109619) on WordPress sites that cannot update PHP yet.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/AbodyStudio/php2shell-shield/releases/latest"><img src="https://img.shields.io/badge/Download%20Plugin-v1.0.0-2ea44f?style=for-the-badge&logo=wordpress&logoColor=white" alt="Download the plugin"></a>&nbsp;
+  <a href="mailto:support@abodystudio.com"><img src="https://img.shields.io/badge/Support-Email-1a73e8?style=for-the-badge&logo=maildotru&logoColor=white" alt="Email support"></a>&nbsp;
+  <a href="https://abodystudio.com"><img src="https://img.shields.io/badge/Website-abodystudio.com-111111?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/AbodyStudio/php2shell-shield/releases/latest"><img src="https://img.shields.io/github/v/release/AbodyStudio/php2shell-shield?style=flat-square&label=release&color=2ea44f" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/PHP-5.4%2B-777bb4?style=flat-square&logo=php&logoColor=white" alt="PHP 5.4+">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--2.0-yellow?style=flat-square" alt="License GPL-2.0"></a>
+  <img src="https://img.shields.io/github/stars/AbodyStudio/php2shell-shield?style=flat-square&color=yellow" alt="GitHub stars">
+</p>
+
+---
 
 > **This is a shield, not a cure.** The only real fix for PHP2Shell is updating PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). This plugin is for the gap until then — it lowers risk, tells you if you were already hit, and gives you an emergency switch. It cannot make an unpatched server perfectly safe.
 
