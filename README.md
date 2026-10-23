@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="PHP2Shell Shield — WordPress Security Plugin" width="720">
+  <img src="assets/banner.svg" alt="PHP2Shell Shield — WordPress Security Plugin" width="720">
 </p>
 
 <p align="center">
