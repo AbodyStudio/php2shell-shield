@@ -1,9 +1,16 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="PHP2Shell Shield — WordPress Security Plugin" width="720">
+  <img src="assets/shield.svg" width="88" height="88" alt="PHP2Shell Shield logo">
+</p>
+
+<h1 align="center">PHP2Shell Shield</h1>
+
+<p align="center">
+  <strong>WordPress Security Plugin</strong><br>
+  Block the exploit. Protect your site.
 </p>
 
 <p align="center">
-  <strong>Risk reduction for the <a href="https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching">PHP2Shell</a> exploit (CVE-2026-109618 / CVE-2026-109619) on WordPress sites that cannot update PHP yet.</strong>
+  Risk reduction for the <a href="https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching">PHP2Shell</a> exploit (CVE-2026-109618 / CVE-2026-109619) on WordPress sites that cannot update PHP yet.
 </p>
 
 <p align="center">
