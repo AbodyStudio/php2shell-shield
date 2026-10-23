@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/AbodyStudio/php2shell-shield/releases/latest"><img src="https://img.shields.io/badge/Download%20Plugin-v1.0.0-2ea44f?style=for-the-badge&logo=wordpress&logoColor=white" alt="Download the plugin"></a>&nbsp;
+  <a href="https://github.com/AbodyStudio/php2shell-shield/releases/latest"><img src="https://img.shields.io/badge/Download-Plugin-2ea44f?style=for-the-badge&logo=wordpress&logoColor=white" alt="Download the plugin"></a>&nbsp;
   <a href="mailto:support@abodystudio.com"><img src="https://img.shields.io/badge/Support-Email-1a73e8?style=for-the-badge&logo=maildotru&logoColor=white" alt="Email support"></a>&nbsp;
   <a href="https://abodystudio.com"><img src="https://img.shields.io/badge/Website-abodystudio.com-111111?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"></a>
 </p>
