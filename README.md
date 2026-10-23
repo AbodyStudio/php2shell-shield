@@ -70,6 +70,18 @@ The bug fires while PHP is still reading the request — before WordPress or any
 - **Secrets reset** — rotates WordPress auth keys/salts safely, plus a manual checklist.
 - **Signed rule packs** — threat definitions load from an RSA-SHA256-signed pack; unsigned or tampered packs are refused.
 
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshot-protect.png" alt="Breach check, secrets reset, and environment" width="860">
+  <br><sub>Breach check, secrets reset, and your environment at a glance.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/screenshot-details.png" alt="Threat definitions and manual snippet" width="860">
+  <br><sub>Signed threat definitions, and the copy-paste snippet for your host.</sub>
+</p>
+
 ## Compatibility
 
 - **PHP 5.4+** (the oldest affected PHP version) — verified with PHPCompatibility against `testVersion 5.4-`.
