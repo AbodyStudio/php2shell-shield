@@ -69,13 +69,26 @@ class P2S_Edge {
 				if ( '' === $p ) {
 					continue;
 				}
+				// Strict: keep only characters valid in a URL path. This strips
+				// quotes, braces, spaces, regex metacharacters and anything else
+				// that could break out of the generated .htaccess / nginx /
+				// Cloudflare rule syntax these paths are interpolated into.
+				$p = preg_replace( '#[^A-Za-z0-9/._~-]#', '', $p );
+				$p = preg_replace( '#/{2,}#', '/', $p );
+				if ( '' === $p ) {
+					continue;
+				}
 				if ( '/' !== substr( $p, 0, 1 ) ) {
 					$p = '/' . $p;
 				}
-				// Keep it a simple path: no spaces, no newlines, no wildcards.
-				$p = preg_replace( '/[\s]+/', '', $p );
-				if ( '' !== $p && ! in_array( $p, $clean, true ) ) {
+				if ( strlen( $p ) > 200 ) {
+					$p = substr( $p, 0, 200 );
+				}
+				if ( ! in_array( $p, $clean, true ) ) {
 					$clean[] = $p;
+				}
+				if ( count( $clean ) >= 50 ) {
+					break;
 				}
 			}
 		}
@@ -141,7 +154,9 @@ class P2S_Edge {
 		$out[] = 'if ($request_method = POST) { set $p2s_block "${p2s_block}1"; }';
 		$out[] = 'if ($http_content_type ~* multipart/form-data) { set $p2s_block "${p2s_block}2"; }';
 		foreach ( $allow as $path ) {
-			$out[] = 'if ($uri ~* "^' . $path . '") { set $p2s_block "${p2s_block}9"; }';
+			// Escape for the nginx regex even though set_allowlist() already
+			// restricts the characters — defence in depth for the rule syntax.
+			$out[] = 'if ($uri ~* "^' . preg_quote( $path, '' ) . '") { set $p2s_block "${p2s_block}9"; }';
 		}
 		$out[] = '# Block only when POST(1) + multipart(2) and no allow(9) matched:';
 		$out[] = 'if ($p2s_block = "012") { return 403; }';

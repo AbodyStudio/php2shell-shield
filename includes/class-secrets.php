@@ -13,7 +13,8 @@
  *   - replaces each define() line by line (never touching the value's content),
  *   - validates the result before writing (opener intact, define count stable),
  *   - writes atomically (temp + rename), and
- *   - keeps a protected backup of the original first.
+ *   - keeps a backup of the original in the database first (never a
+ *     web-accessible file, since it holds the old keys/salts).
  *
  * The rotate() transform is pure and testable; file handling uses WordPress-ish
  * paths but no WordPress functions, so it can be exercised from the CLI too.
@@ -116,23 +117,31 @@ class P2S_Secrets {
 		return false;
 	}
 
-	protected function backup_dir() {
-		if ( function_exists( 'wp_upload_dir' ) ) {
-			$u = wp_upload_dir();
-			if ( ! empty( $u['basedir'] ) ) {
-				return rtrim( $u['basedir'], '/\\' ) . '/php2shell-shield/backups/';
-			}
-		}
-		return $this->base . 'wp-content/uploads/php2shell-shield/backups/';
+	/* ---- backup (database, never a web-accessible file) ---------------- */
+
+	/**
+	 * The original wp-config.php holds the auth keys and salts, so its backup
+	 * must never sit on disk where a web server could serve it. We keep it in
+	 * the database (obfuscated, so it is not plain text at rest) and let the
+	 * admin discard it once they have confirmed they can still log in.
+	 */
+
+	/** Is there a stored pre-rotation backup? */
+	public function has_backup() {
+		$b = p2s_opt_get( 'p2s_secrets_backup' );
+		return ( is_array( $b ) && ! empty( $b['content'] ) );
 	}
 
-	protected function harden_backup_dir( $dir ) {
-		if ( ! is_dir( $dir ) ) {
-			@mkdir( $dir, 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
-		}
-		// Deny web access to the backup (it holds the original secrets).
-		@file_put_contents( $dir . '.htaccess', "Require all denied\n<IfModule !mod_authz_core.c>\nDeny from all\n</IfModule>\n" );
-		@file_put_contents( $dir . 'index.php', "<?php\n// Silence is golden.\n" );
+	/** When the backup was taken (unix time), or 0. */
+	public function backup_time() {
+		$b = p2s_opt_get( 'p2s_secrets_backup' );
+		return ( is_array( $b ) && isset( $b['ts'] ) ) ? (int) $b['ts'] : 0;
+	}
+
+	/** Remove the stored backup (clears the old secrets from the database). */
+	public function discard_backup() {
+		p2s_opt_delete( 'p2s_secrets_backup' );
+		return array( 'ok' => true );
 	}
 
 	/**
@@ -158,15 +167,16 @@ class P2S_Secrets {
 			return array( 'ok' => false, 'reason' => 'transform_failed', 'missing' => $res['missing'] );
 		}
 
-		// Back up the original (protected) before touching the live file.
-		$bdir = $this->backup_dir();
-		$this->harden_backup_dir( $bdir );
-		$bfile = $bdir . 'wp-config-' . gmdate( 'Ymd-His' ) . '.bak';
-		if ( false !== @file_put_contents( $bfile, $content ) ) {
-			@chmod( $bfile, 0600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- direct filesystem op required: atomic config writes + auto-revert, no FS-credential prompt.
-		} else {
-			$bfile = '';
-		}
+		// Back up the original in the database before touching the live file.
+		// It contains the old keys/salts, so it must never be a web-readable
+		// file; obfuscate it so it is not plain text at rest either.
+		p2s_opt_set(
+			'p2s_secrets_backup',
+			array(
+				'ts'      => time(),
+				'content' => p2s_obfuscate( $content ),
+			)
+		);
 
 		// Atomic write.
 		$tmp = $path . '.p2s-tmp-' . substr( md5( uniqid( 'p2s', true ) ), 0, 8 );
@@ -183,7 +193,7 @@ class P2S_Secrets {
 			'ok'      => true,
 			'rotated' => $res['rotated'],
 			'missing' => $res['missing'],
-			'backup'  => $bfile,
+			'backup'  => 'db',
 		);
 	}
 

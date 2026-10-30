@@ -20,6 +20,7 @@ $p2s_options = array(
 	'p2s_setup_done',
 	'p2s_shield',
 	'p2s_backup',
+	'p2s_secrets_backup',
 	'p2s_edge',
 	'p2s_edge_allow',
 	'p2s_edge_backup',

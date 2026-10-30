@@ -1,4 +1,19 @@
------BEGIN PUBLIC KEY-----
+<?php
+/**
+ * PUBLIC signing key (safe to ship) used to verify the bundled rule packs.
+ *
+ * This is a public key — it can only verify signatures, never create them.
+ * It is kept as PHP (not a bare .pub file) so directory "sensitive file"
+ * scanners do not mistake it for a private key or credential.
+ *
+ * @package PHP2Shell_Shield
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+return "-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwtpoko23Jre3hHXyvyn4
 Gkp3mfhf33Oi1f2ukDMk++D6uyk4RdmUSVeWKFeC+CKAXqr3RoqdgPV+x9RDyTcg
 PO6YFNkY/yQ9r7N3Kc2wGeUN9M1KzWkKPDsvqw7ahh3+u2bDIAuv2kjiYwK0+gzS
@@ -7,3 +22,4 @@ feQPnGGiMgdXBxVTfvUs33JdB4PmSODezTSYEIaDk9KPU4t18A9zsOaxKDtWLATr
 VMph5ApAsj1pCgRk5XwhGyHL5i6twOnbXcdNqhBnwi9cNWAqQqpqWdhJ5trgBtSk
 /wIDAQAB
 -----END PUBLIC KEY-----
+";

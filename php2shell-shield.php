@@ -5,7 +5,7 @@
  * Description:        Reduces the risk of the PHP2Shell exploit (CVE-2026-109618 / CVE-2026-109619) on sites that cannot update PHP yet. A shield, not a cure — the only real fix is updating PHP.
  * Version:           1.4.0
  * Requires at least: 3.6
- * Requires PHP:      5.4
+ * Requires PHP:      7.0
  * Author:            AbodyStudio
  * Author URI:        https://abodystudio.com
  * License:           GPL-2.0-or-later

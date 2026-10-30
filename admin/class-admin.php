@@ -28,6 +28,7 @@ class P2S_Admin {
 		add_action( 'admin_post_p2s_scan_run', array( $this, 'handle_scan_run' ) );
 		add_action( 'admin_post_p2s_key_deactivate', array( $this, 'handle_key_deactivate' ) );
 		add_action( 'admin_post_p2s_secrets_rotate', array( $this, 'handle_secrets_rotate' ) );
+		add_action( 'admin_post_p2s_secrets_discard', array( $this, 'handle_secrets_discard' ) );
 		add_action( 'admin_post_p2s_phpcheck', array( $this, 'handle_phpcheck' ) );
 		add_action( 'admin_post_p2s_phpswitch', array( $this, 'handle_phpswitch' ) );
 	}
@@ -126,10 +127,10 @@ class P2S_Admin {
 
 	public function handle_edge_allow() {
 		$this->guard( 'p2s_edge_allow' );
-		$raw  = isset( $_POST['allow'] ) ? wp_unslash( $_POST['allow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
-		$list = preg_split( '/[\r\n]+/', (string) $raw );
+		$raw  = isset( $_POST['allow'] ) ? (string) wp_unslash( $_POST['allow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- split then sanitised line by line below; nonce verified by guard() above.
+		$list = array_map( 'sanitize_text_field', preg_split( '/[\r\n]+/', $raw ) );
 		$edge = new P2S_Edge( null, $this->detect_report() );
-		$edge->set_allowlist( $list );
+		$edge->set_allowlist( $list ); // Applies strict URL-path sanitisation before storage/use.
 		if ( $edge->is_active() ) {
 			$edge->enable_htaccess();
 		}
@@ -257,6 +258,13 @@ class P2S_Admin {
 		$this->back( ! empty( $res['ok'] ) ? 'secrets_done' : 'secrets_fail' );
 	}
 
+	public function handle_secrets_discard() {
+		$this->guard( 'p2s_secrets_discard' );
+		$secrets = new P2S_Secrets();
+		$secrets->discard_backup();
+		$this->back( 'secrets_discarded' );
+	}
+
 	public function handle_phpcheck() {
 		$this->guard( 'p2s_phpcheck' );
 		$target = isset( $_POST['target'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['target'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
@@ -337,6 +345,8 @@ class P2S_Admin {
 			$this->admin_box( 'success', 'Security keys rotated. Everyone (including you) has been signed out — log in again. Stolen session cookies no longer work.' );
 		} elseif ( 'secrets_fail' === $n ) {
 			$this->admin_box( 'error', 'Could not rotate the keys automatically (wp-config.php may not be writable, or the keys are defined elsewhere). Nothing was changed.' );
+		} elseif ( 'secrets_discarded' === $n ) {
+			$this->admin_box( 'success', 'The stored wp-config.php backup was removed from the database.' );
 		} elseif ( 'phpcheck_done' === $n ) {
 			$this->admin_box( 'success', 'Compatibility check complete. Results are below.' );
 		} elseif ( 0 === strpos( $n, 'phpswitch_ok_' ) ) {
@@ -797,12 +807,23 @@ class P2S_Admin {
 		echo '<div class="p2s-card">';
 		$this->card_head( 'refresh', 'Secrets reset' );
 		echo '<p>PHP2Shell can leak memory that held passwords and keys. Rotating your WordPress security keys makes any stolen login session useless and signs everyone out.</p>';
-		echo '<p class="p2s-honest-inline"><strong>This signs out every user, including you.</strong> You will need to log in again straight after. Your original wp-config.php is backed up first.</p>';
+		echo '<p class="p2s-honest-inline"><strong>This signs out every user, including you.</strong> You will need to log in again straight after. Your original wp-config.php is backed up in the database first (never a web-accessible file).</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'Rotate security keys now? Everyone will be signed out.\');">';
 		echo '<input type="hidden" name="action" value="p2s_secrets_rotate" />';
 		wp_nonce_field( 'p2s_secrets' );
 		submit_button( 'Rotate security keys', 'primary', 'submit', false );
 		echo '</form>';
+
+		if ( $secrets->has_backup() ) {
+			$when = $secrets->backup_time();
+			$ago  = $when ? ' (' . esc_html( human_time_diff( $when ) ) . ' ago)' : '';
+			echo '<p class="p2s-dim">A backup of your previous <code>wp-config.php</code> is kept in the database' . $ago . ', not on disk. Once you have confirmed you can still log in, you can remove it (it holds your old keys).</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $ago is pre-escaped; rest is static.
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			echo '<input type="hidden" name="action" value="p2s_secrets_discard" />';
+			wp_nonce_field( 'p2s_secrets_discard' );
+			submit_button( 'Discard the backup', 'secondary', 'submit', false );
+			echo '</form>';
+		}
 
 		echo '<h3>Also change these yourself</h3>';
 		echo '<p class="p2s-dim">The plugin cannot rotate these for you. If you think you were breached, change each one:</p>';

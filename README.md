@@ -21,7 +21,7 @@
 
 <p align="center">
   <a href="https://github.com/AbodyStudio/php2shell-shield/releases/latest"><img src="https://img.shields.io/github/v/release/AbodyStudio/php2shell-shield?style=flat-square&label=release&color=2ea44f" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/PHP-5.4%2B-777bb4?style=flat-square&logo=php&logoColor=white" alt="PHP 5.4+">
+  <img src="https://img.shields.io/badge/PHP-7.0%2B-777bb4?style=flat-square&logo=php&logoColor=white" alt="PHP 7.0+">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--2.0-yellow?style=flat-square" alt="License GPL-2.0"></a>
   <img src="https://img.shields.io/github/stars/AbodyStudio/php2shell-shield?style=flat-square&color=yellow" alt="GitHub stars">
 </p>
@@ -85,7 +85,7 @@ Every feature is user-initiated, reversible, and shown plainly — the plugin ne
 ### Built right
 - **Signed rule packs** — threat definitions load from an RSA-SHA256-signed pack; unsigned or tampered packs are refused.
 - **Signed self-updates** (GitHub build) — updates verify the downloaded zip's signature before installing. (The WordPress.org build updates through WordPress.org instead.)
-- **PHP 5.4+ compatible**, atomic and reversible writes, no data sent anywhere except the services listed below.
+- **PHP 7.0+**, atomic and reversible writes, no data sent anywhere except the services listed below.
 
 ## Screenshots
 
@@ -102,7 +102,7 @@ Every feature is user-initiated, reversible, and shown plainly — the plugin ne
 ## Compatibility
 
 - **WordPress 3.6 → current** — deliberately wide: it installs on very old sites (the ones most likely to still run vulnerable PHP) *and* on the latest WordPress, so new sites stay monitored too. No feature uses an API newer than WordPress 3.6.
-- **PHP 5.4+** (the oldest affected PHP version) — verified with PHPCompatibility against `testVersion 5.4-`.
+- **PHP 7.0+** — verified with PHPCompatibility against `testVersion 7.0-` (the WordPress.org floor; the code itself avoids newer-PHP-only syntax, so it also runs on older PHP for manual installs).
 - **Apache / LiteSpeed** — full feature set. **nginx / IIS** — detection + generated snippets. **Cloudflare** — full edge rule via API.
 
 ## Install

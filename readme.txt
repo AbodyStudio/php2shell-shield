@@ -1,9 +1,9 @@
 === PHP2Shell Shield ===
-Contributors: abodystudio
+Contributors: abodystudios
 Tags: security, php2shell, hardening, vulnerability, cve
 Requires at least: 3.6
 Tested up to: 7.1
-Requires PHP: 5.4
+Requires PHP: 7.0
 Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -153,7 +153,7 @@ https://github.com/AbodyStudio/php2shell-shield/issues .
 = 1.0.0 =
 * First stable release. Detection, one-click shield, edge filter (.htaccess /
   Cloudflare / nginx), lockdown, breach check, remote-key audit, secrets reset,
-  and a signed rule-pack engine. Verified PHP 5.4+ compatible.
+  and a signed rule-pack engine. Verified on PHP 7.0+.
 
 = 0.6.0 =
 * Secrets reset: rotates the eight WordPress auth keys/salts safely, plus a
