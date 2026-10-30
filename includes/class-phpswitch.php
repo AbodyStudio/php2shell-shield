@@ -1,6 +1,6 @@
 <?php
 /**
- * cPanel PHP-version switcher for PHP2Shell Shield.
+ * cPanel PHP-version switcher for PHP Defender.
  *
  * On most cPanel (EA4) sites the active PHP version is written into .htaccess as
  * a handler line (application/x-httpd-ea-phpNN). Where that is the case, this
@@ -22,14 +22,14 @@
  *
  * Parsing/rewrite helpers are pure and testable; the live switch uses WordPress.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_PhpSwitch {
+class Phpdef_PhpSwitch {
 
 	/** @var string */
 	protected $base;
@@ -143,7 +143,7 @@ class P2S_PhpSwitch {
 			return array( 'ok' => false, 'reason' => 'no_handler' );
 		}
 
-		p2s_opt_set( 'p2s_phpswitch_backup', array( 'content' => $orig, 'from' => $d['current'], 'at' => time() ) );
+		phpdef_opt_set( 'phpdef_phpswitch_backup', array( 'content' => $orig, 'from' => $d['current'], 'at' => time() ) );
 
 		if ( ! $this->write( $path, $new ) ) {
 			return array( 'ok' => false, 'reason' => 'write_failed' );
@@ -169,17 +169,17 @@ class P2S_PhpSwitch {
 			return array( 'ok' => false, 'detail' => 'verification unavailable' );
 		}
 		$token = substr( md5( uniqid( 'p2s', true ) ), 0, 16 );
-		set_transient( 'p2s_phpprobe', $token, 120 );
+		set_transient( 'phpdef_phpprobe', $token, 120 );
 
 		// 1) Probe request: our init hook echoes the running PHP version + token.
 		$probe = wp_remote_get(
-			add_query_arg( 'p2s_probe', $token, home_url( '/' ) ),
+			add_query_arg( 'phpdef_probe', $token, home_url( '/' ) ),
 			array( 'timeout' => 15, 'sslverify' => false, 'redirection' => 1 )
 		);
 		$ok_probe = false;
 		if ( ! is_wp_error( $probe ) && 200 === (int) wp_remote_retrieve_response_code( $probe ) ) {
 			$body = wp_remote_retrieve_body( $probe );
-			if ( false !== strpos( $body, 'P2S_PHP:' . $version . '.' ) && false !== strpos( $body, $token ) ) {
+			if ( false !== strpos( $body, 'PHPDEF_PHP:' . $version . '.' ) && false !== strpos( $body, $token ) ) {
 				$ok_probe = true;
 			}
 		}
@@ -188,7 +188,7 @@ class P2S_PhpSwitch {
 		$home    = wp_remote_get( home_url( '/' ), array( 'timeout' => 15, 'sslverify' => false, 'redirection' => 1 ) );
 		$ok_home = ( ! is_wp_error( $home ) && (int) wp_remote_retrieve_response_code( $home ) < 500 );
 
-		delete_transient( 'p2s_phpprobe' );
+		delete_transient( 'phpdef_phpprobe' );
 
 		if ( $ok_probe && $ok_home ) {
 			return array( 'ok' => true );
@@ -201,14 +201,14 @@ class P2S_PhpSwitch {
 
 	/** Early probe responder: prints the running PHP version when the token matches. */
 	public function maybe_probe() {
-		if ( empty( $_GET['p2s_probe'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( empty( $_GET['phpdef_probe'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
-		$token = get_transient( 'p2s_phpprobe' );
-		$given = sanitize_text_field( wp_unslash( $_GET['p2s_probe'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( $token && p2s_hash_equals( (string) $token, $given ) ) {
+		$token = get_transient( 'phpdef_phpprobe' );
+		$given = sanitize_text_field( wp_unslash( $_GET['phpdef_probe'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( $token && phpdef_hash_equals( (string) $token, $given ) ) {
 			header( 'Content-Type: text/plain' );
-			echo 'P2S_PHP:' . PHP_VERSION . ':' . $given; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- constant + validated token.
+			echo 'PHPDEF_PHP:' . PHP_VERSION . ':' . $given; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- constant + validated token.
 			exit;
 		}
 	}

@@ -1,44 +1,44 @@
 <?php
 /**
- * Admin UI for PHP2Shell Shield — modern, visual dashboard.
+ * Admin UI for PHP Defender — modern, visual dashboard.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Admin {
+class Phpdef_Admin {
 
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
-		add_action( 'admin_post_p2s_enable', array( $this, 'handle_enable' ) );
-		add_action( 'admin_post_p2s_disable', array( $this, 'handle_disable' ) );
-		add_action( 'admin_post_p2s_edge_enable', array( $this, 'handle_edge_enable' ) );
-		add_action( 'admin_post_p2s_edge_disable', array( $this, 'handle_edge_disable' ) );
-		add_action( 'admin_post_p2s_edge_allow', array( $this, 'handle_edge_allow' ) );
-		add_action( 'admin_post_p2s_cf_connect', array( $this, 'handle_cf_connect' ) );
-		add_action( 'admin_post_p2s_cf_disconnect', array( $this, 'handle_cf_disconnect' ) );
-		add_action( 'admin_post_p2s_cf_deploy', array( $this, 'handle_cf_deploy' ) );
-		add_action( 'admin_post_p2s_cf_remove', array( $this, 'handle_cf_remove' ) );
-		add_action( 'admin_post_p2s_lock_enable', array( $this, 'handle_lock_enable' ) );
-		add_action( 'admin_post_p2s_lock_disable', array( $this, 'handle_lock_disable' ) );
-		add_action( 'admin_post_p2s_scan_run', array( $this, 'handle_scan_run' ) );
-		add_action( 'admin_post_p2s_key_deactivate', array( $this, 'handle_key_deactivate' ) );
-		add_action( 'admin_post_p2s_secrets_rotate', array( $this, 'handle_secrets_rotate' ) );
-		add_action( 'admin_post_p2s_secrets_discard', array( $this, 'handle_secrets_discard' ) );
-		add_action( 'admin_post_p2s_phpcheck', array( $this, 'handle_phpcheck' ) );
-		add_action( 'admin_post_p2s_phpswitch', array( $this, 'handle_phpswitch' ) );
+		add_action( 'admin_post_phpdef_enable', array( $this, 'handle_enable' ) );
+		add_action( 'admin_post_phpdef_disable', array( $this, 'handle_disable' ) );
+		add_action( 'admin_post_phpdef_edge_enable', array( $this, 'handle_edge_enable' ) );
+		add_action( 'admin_post_phpdef_edge_disable', array( $this, 'handle_edge_disable' ) );
+		add_action( 'admin_post_phpdef_edge_allow', array( $this, 'handle_edge_allow' ) );
+		add_action( 'admin_post_phpdef_cf_connect', array( $this, 'handle_cf_connect' ) );
+		add_action( 'admin_post_phpdef_cf_disconnect', array( $this, 'handle_cf_disconnect' ) );
+		add_action( 'admin_post_phpdef_cf_deploy', array( $this, 'handle_cf_deploy' ) );
+		add_action( 'admin_post_phpdef_cf_remove', array( $this, 'handle_cf_remove' ) );
+		add_action( 'admin_post_phpdef_lock_enable', array( $this, 'handle_lock_enable' ) );
+		add_action( 'admin_post_phpdef_lock_disable', array( $this, 'handle_lock_disable' ) );
+		add_action( 'admin_post_phpdef_scan_run', array( $this, 'handle_scan_run' ) );
+		add_action( 'admin_post_phpdef_key_deactivate', array( $this, 'handle_key_deactivate' ) );
+		add_action( 'admin_post_phpdef_secrets_rotate', array( $this, 'handle_secrets_rotate' ) );
+		add_action( 'admin_post_phpdef_secrets_discard', array( $this, 'handle_secrets_discard' ) );
+		add_action( 'admin_post_phpdef_phpcheck', array( $this, 'handle_phpcheck' ) );
+		add_action( 'admin_post_phpdef_phpswitch', array( $this, 'handle_phpswitch' ) );
 	}
 
 	public function menu() {
 		add_menu_page(
-			'PHP2Shell Shield',
-			'PHP2Shell Shield',
+			'PHP Defender',
+			'PHP Defender',
 			'manage_options',
-			P2S_SLUG,
+			PHPDEF_SLUG,
 			array( $this, 'render' ),
 			$this->menu_icon(),
 			81
@@ -54,10 +54,10 @@ class P2S_Admin {
 	}
 
 	public function assets( $hook ) {
-		if ( 'toplevel_page_' . P2S_SLUG !== $hook ) {
+		if ( 'toplevel_page_' . PHPDEF_SLUG !== $hook ) {
 			return;
 		}
-		wp_register_style( 'p2s-admin', false, array(), P2S_VERSION );
+		wp_register_style( 'p2s-admin', false, array(), PHPDEF_VERSION );
 		wp_enqueue_style( 'p2s-admin' );
 		wp_add_inline_style( 'p2s-admin', $this->css() );
 	}
@@ -68,8 +68,8 @@ class P2S_Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'       => P2S_SLUG,
-					'p2s_notice' => $notice,
+					'page'       => PHPDEF_SLUG,
+					'phpdef_notice' => $notice,
 				),
 				admin_url( 'admin.php' )
 			)
@@ -81,9 +81,9 @@ class P2S_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Not allowed.' );
 		}
-		check_admin_referer( 'p2s_enable' );
-		$ini    = function_exists( 'p2s_engine' ) ? p2s_engine()->mitigation_ini() : null;
-		$shield = new P2S_Shield( null, null, $ini );
+		check_admin_referer( 'phpdef_enable' );
+		$ini    = function_exists( 'phpdef_engine' ) ? phpdef_engine()->mitigation_ini() : null;
+		$shield = new Phpdef_Shield( null, null, $ini );
 		$res    = $shield->enable();
 		if ( ! empty( $res['ok'] ) ) {
 			$this->back( 'enabled' );
@@ -96,8 +96,8 @@ class P2S_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Not allowed.' );
 		}
-		check_admin_referer( 'p2s_disable' );
-		$shield = new P2S_Shield();
+		check_admin_referer( 'phpdef_disable' );
+		$shield = new Phpdef_Shield();
 		$shield->disable();
 		$this->back( 'disabled' );
 	}
@@ -112,24 +112,24 @@ class P2S_Admin {
 	}
 
 	public function handle_edge_enable() {
-		$this->guard( 'p2s_edge' );
-		$edge = new P2S_Edge( null, $this->detect_report() );
+		$this->guard( 'phpdef_edge' );
+		$edge = new Phpdef_Edge( null, $this->detect_report() );
 		$res  = $edge->enable_htaccess();
 		$this->back( ! empty( $res['ok'] ) ? 'edge_on' : 'edge_fail' );
 	}
 
 	public function handle_edge_disable() {
-		$this->guard( 'p2s_edge' );
-		$edge = new P2S_Edge( null, $this->detect_report() );
+		$this->guard( 'phpdef_edge' );
+		$edge = new Phpdef_Edge( null, $this->detect_report() );
 		$edge->disable_htaccess();
 		$this->back( 'edge_off' );
 	}
 
 	public function handle_edge_allow() {
-		$this->guard( 'p2s_edge_allow' );
+		$this->guard( 'phpdef_edge_allow' );
 		$raw  = isset( $_POST['allow'] ) ? (string) wp_unslash( $_POST['allow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- split then sanitised line by line below; nonce verified by guard() above.
 		$list = array_map( 'sanitize_text_field', preg_split( '/[\r\n]+/', $raw ) );
-		$edge = new P2S_Edge( null, $this->detect_report() );
+		$edge = new Phpdef_Edge( null, $this->detect_report() );
 		$edge->set_allowlist( $list ); // Applies strict URL-path sanitisation before storage/use.
 		if ( $edge->is_active() ) {
 			$edge->enable_htaccess();
@@ -140,12 +140,12 @@ class P2S_Admin {
 	/* ---- cloudflare ---------------------------------------------------- */
 
 	public function handle_cf_connect() {
-		$this->guard( 'p2s_cf' );
+		$this->guard( 'phpdef_cf' );
 		$token = isset( $_POST['cf_token'] ) ? trim( (string) wp_unslash( $_POST['cf_token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		if ( '' === $token ) {
 			$this->back( 'cf_fail' );
 		}
-		$cf  = new P2S_Cloudflare( $token );
+		$cf  = new Phpdef_Cloudflare( $token );
 		$ver = $cf->verify_token();
 		if ( empty( $ver['ok'] ) ) {
 			$this->back( 'cf_badtoken' );
@@ -155,10 +155,10 @@ class P2S_Admin {
 		if ( empty( $zone['ok'] ) ) {
 			$this->back( 'cf_nozone' );
 		}
-		p2s_opt_set(
-			'p2s_cf',
+		phpdef_opt_set(
+			'phpdef_cf',
 			array(
-				'token'     => p2s_obfuscate( $token ),
+				'token'     => phpdef_obfuscate( $token ),
 				'zone_id'   => $zone['zone_id'],
 				'domain'    => $host,
 				'connected' => 1,
@@ -168,39 +168,39 @@ class P2S_Admin {
 	}
 
 	public function handle_cf_disconnect() {
-		$this->guard( 'p2s_cf' );
-		$cf = p2s_cf_client();
+		$this->guard( 'phpdef_cf' );
+		$cf = phpdef_cf_client();
 		if ( $cf ) {
 			$cf->remove_rule( 'p2s:filter' );
 		}
-		p2s_opt_delete( 'p2s_cf' );
+		phpdef_opt_delete( 'phpdef_cf' );
 		$this->back( 'cf_disconnected' );
 	}
 
 	public function handle_cf_deploy() {
-		$this->guard( 'p2s_cf' );
-		$cf = p2s_cf_client();
+		$this->guard( 'phpdef_cf' );
+		$cf = phpdef_cf_client();
 		if ( ! $cf ) {
 			$this->back( 'cf_fail' );
 		}
-		$edge = new P2S_Edge( null, $this->detect_report() );
+		$edge = new Phpdef_Edge( null, $this->detect_report() );
 		$res  = $cf->deploy_rule( 'p2s:filter', $edge->cf_expression(), 'block' );
 		if ( ! empty( $res['ok'] ) ) {
-			$c            = p2s_cf_config();
+			$c            = phpdef_cf_config();
 			$c['rule_on'] = 1;
-			p2s_opt_set( 'p2s_cf', $c );
+			phpdef_opt_set( 'phpdef_cf', $c );
 		}
 		$this->back( ! empty( $res['ok'] ) ? 'cf_deployed' : 'cf_fail' );
 	}
 
 	public function handle_cf_remove() {
-		$this->guard( 'p2s_cf' );
-		$cf = p2s_cf_client();
+		$this->guard( 'phpdef_cf' );
+		$cf = phpdef_cf_client();
 		if ( $cf ) {
 			$cf->remove_rule( 'p2s:filter' );
-			$c            = p2s_cf_config();
+			$c            = phpdef_cf_config();
 			$c['rule_on'] = 0;
-			p2s_opt_set( 'p2s_cf', $c );
+			phpdef_opt_set( 'phpdef_cf', $c );
 		}
 		$this->back( 'cf_removed' );
 	}
@@ -208,81 +208,81 @@ class P2S_Admin {
 	/* ---- lockdown ------------------------------------------------------ */
 
 	public function handle_lock_enable() {
-		$this->guard( 'p2s_lock' );
-		$ips = array( p2s_remote_addr() );
+		$this->guard( 'phpdef_lock' );
+		$ips = array( phpdef_remote_addr() );
 		if ( isset( $_POST['extra_ip'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard() above.
 			$extra = trim( (string) wp_unslash( $_POST['extra_ip'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 			if ( '' !== $extra ) {
 				$ips[] = $extra;
 			}
 		}
-		$lock = new P2S_Lockdown();
+		$lock = new Phpdef_Lockdown();
 		$res  = $lock->enable( $ips );
 		$this->back( ! empty( $res['ok'] ) ? 'lock_on' : 'lock_fail' );
 	}
 
 	public function handle_lock_disable() {
-		$this->guard( 'p2s_lock' );
-		$lock = new P2S_Lockdown();
+		$this->guard( 'phpdef_lock' );
+		$lock = new Phpdef_Lockdown();
 		$lock->disable();
 		$this->back( 'lock_off' );
 	}
 
 	protected function detect_report() {
-		$engine = function_exists( 'p2s_engine' ) ? p2s_engine() : new P2S_Engine( P2S_DIR . 'packs/' );
-		$d      = new P2S_Detect( array(), $engine->php_fixed_map() );
+		$engine = function_exists( 'phpdef_engine' ) ? phpdef_engine() : new Phpdef_Engine( PHPDEF_DIR . 'packs/' );
+		$d      = new Phpdef_Detect( array(), $engine->php_fixed_map() );
 		return $d->run();
 	}
 
 	/* ---- breach check -------------------------------------------------- */
 
 	public function handle_scan_run() {
-		$this->guard( 'p2s_scan' );
-		$scan = new P2S_Scan();
-		p2s_opt_set( 'p2s_scan_result', $scan->run() );
+		$this->guard( 'phpdef_scan' );
+		$scan = new Phpdef_Scan();
+		phpdef_opt_set( 'phpdef_scan_result', $scan->run() );
 		$this->back( 'scan_done' );
 	}
 
 	public function handle_key_deactivate() {
-		$this->guard( 'p2s_keys' );
+		$this->guard( 'phpdef_keys' );
 		$id   = isset( $_POST['key_id'] ) ? sanitize_key( wp_unslash( $_POST['key_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard() above.
-		$keys = new P2S_Keys();
+		$keys = new Phpdef_Keys();
 		$keys->deactivate( $id );
 		$this->back( 'key_off' );
 	}
 
 	public function handle_secrets_rotate() {
-		$this->guard( 'p2s_secrets' );
-		$secrets = new P2S_Secrets();
+		$this->guard( 'phpdef_secrets' );
+		$secrets = new Phpdef_Secrets();
 		$res     = $secrets->rotate_file();
 		$this->back( ! empty( $res['ok'] ) ? 'secrets_done' : 'secrets_fail' );
 	}
 
 	public function handle_secrets_discard() {
-		$this->guard( 'p2s_secrets_discard' );
-		$secrets = new P2S_Secrets();
+		$this->guard( 'phpdef_secrets_discard' );
+		$secrets = new Phpdef_Secrets();
 		$secrets->discard_backup();
 		$this->back( 'secrets_discarded' );
 	}
 
 	public function handle_phpcheck() {
-		$this->guard( 'p2s_phpcheck' );
+		$this->guard( 'phpdef_phpcheck' );
 		$target = isset( $_POST['target'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['target'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		if ( ! preg_match( '/^\d+\.\d+$/', $target ) ) {
 			$target = null;
 		}
-		$ready = new P2S_PhpReady();
-		p2s_opt_set( 'p2s_phpcheck_result', $ready->run( $target ) );
+		$ready = new Phpdef_PhpReady();
+		phpdef_opt_set( 'phpdef_phpcheck_result', $ready->run( $target ) );
 		$this->back( 'phpcheck_done' );
 	}
 
 	public function handle_phpswitch() {
-		$this->guard( 'p2s_phpswitch' );
+		$this->guard( 'phpdef_phpswitch' );
 		$version = isset( $_POST['version'] ) ? preg_replace( '/[^0-9.]/', '', (string) wp_unslash( $_POST['version'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- nonce verified by check_admin_referer() in guard()/handler before this line.
 		if ( ! preg_match( '/^\d+\.\d+$/', $version ) ) {
 			$this->back( 'phpswitch_fail' );
 		}
-		$sw  = new P2S_PhpSwitch();
+		$sw  = new Phpdef_PhpSwitch();
 		$res = $sw->switch_to( $version );
 		if ( ! empty( $res['ok'] ) ) {
 			$this->back( 'phpswitch_ok_' . str_replace( '.', '_', $version ) );
@@ -294,10 +294,10 @@ class P2S_Admin {
 	/* ---- notices ------------------------------------------------------- */
 
 	protected function notice() {
-		if ( ! isset( $_GET['p2s_notice'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( $_GET['phpdef_notice'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
-		$n = sanitize_text_field( wp_unslash( $_GET['p2s_notice'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$n = sanitize_text_field( wp_unslash( $_GET['phpdef_notice'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( 'enabled' === $n ) {
 			$this->admin_box( 'success', 'Protection turned on. The settings were written. PHP may take a few minutes to pick them up on some servers — re-scan to confirm.' );
@@ -450,14 +450,14 @@ class P2S_Admin {
 			return;
 		}
 
-		$engine = function_exists( 'p2s_engine' ) ? p2s_engine() : new P2S_Engine( P2S_DIR . 'packs/' );
-		$detect = new P2S_Detect( array(), $engine->php_fixed_map() );
+		$engine = function_exists( 'phpdef_engine' ) ? phpdef_engine() : new Phpdef_Engine( PHPDEF_DIR . 'packs/' );
+		$detect = new Phpdef_Detect( array(), $engine->php_fixed_map() );
 		$r      = $detect->run();
-		$shield = new P2S_Shield( null, $r, $engine->mitigation_ini() );
+		$shield = new Phpdef_Shield( null, $r, $engine->mitigation_ini() );
 		$v      = $shield->verify();
-		$edge   = new P2S_Edge( null, $r );
-		$lock   = new P2S_Lockdown();
-		$cfg    = function_exists( 'p2s_cf_config' ) ? p2s_cf_config() : array();
+		$edge   = new Phpdef_Edge( null, $r );
+		$lock   = new Phpdef_Lockdown();
+		$cfg    = function_exists( 'phpdef_cf_config' ) ? phpdef_cf_config() : array();
 		$tone   = $this->tone( $r['status']['code'] );
 
 		$layers = array( $shield->is_active(), $edge->is_active(), ! empty( $cfg['rule_on'] ), $lock->is_active() );
@@ -537,7 +537,7 @@ class P2S_Admin {
 		$this->render_pack( $engine );
 		$this->render_snippet( $shield );
 
-		echo '<p class="p2s-foot">PHP2Shell Shield &middot; by <a href="https://abodystudio.com" target="_blank" rel="noopener">AbodyStudio</a> &middot; <a href="mailto:support@abodystudio.com">support@abodystudio.com</a></p>';
+		echo '<p class="p2s-foot">PHP Defender &middot; by <a href="https://abodystudio.com" target="_blank" rel="noopener">AbodyStudio</a> &middot; <a href="mailto:support@abodystudio.com">support@abodystudio.com</a></p>';
 
 		echo '</div>';
 	}
@@ -591,7 +591,7 @@ class P2S_Admin {
 				echo '<p class="p2s-verify p2s-bad-text">&#9888; Protection is written, but PHP is <strong>not applying it</strong>. Your host may lock these settings. Apply the manual snippet at host level, or contact your host.</p>';
 			}
 			$this->applied_settings_note( $shield->pairs() );
-			$this->post_form( 'p2s_disable', 'p2s_disable', 'Turn off protection', 'secondary' );
+			$this->post_form( 'phpdef_disable', 'phpdef_disable', 'Turn off protection', 'secondary' );
 			echo '<p class="p2s-dim">Turning it off restores your original configuration exactly.</p>';
 			$this->override_caveat_note();
 
@@ -603,7 +603,7 @@ class P2S_Admin {
 			}
 			echo '<p class="p2s-honest-inline"><strong>Heads up:</strong> one setting is <code>memory_limit = -1</code> (unlimited). It is PHP\'s own recommendation for this bug, but on a tiny server one runaway script could use a lot of memory. You can undo it any time.</p>';
 			$this->override_caveat_note();
-			$this->post_form( 'p2s_enable', 'p2s_enable', 'Turn on protection', 'primary' );
+			$this->post_form( 'phpdef_enable', 'phpdef_enable', 'Turn on protection', 'primary' );
 
 		} else {
 			echo '<p>On this server the plugin cannot write the settings itself. Copy the manual snippet below and apply it (or ask your host to). Then re-scan and the status will update.</p>';
@@ -620,9 +620,9 @@ class P2S_Admin {
 
 		if ( $edge->is_active() ) {
 			echo '<p class="p2s-verify p2s-ok-text">&#10003; Edge filter is <strong>on</strong> (written to .htaccess).</p>';
-			$this->post_form( 'p2s_edge_disable', 'p2s_edge', 'Turn off the filter', 'secondary' );
+			$this->post_form( 'phpdef_edge_disable', 'phpdef_edge', 'Turn off the filter', 'secondary' );
 		} elseif ( $edge->can_write_htaccess() ) {
-			$this->post_form( 'p2s_edge_enable', 'p2s_edge', 'Turn on the filter', 'primary' );
+			$this->post_form( 'phpdef_edge_enable', 'phpdef_edge', 'Turn on the filter', 'primary' );
 		} else {
 			echo '<p class="p2s-dim">On this server (' . esc_html( $r['server']['label'] ) . ') the plugin cannot write the filter. Use the nginx snippet below, or the Cloudflare option.</p>';
 		}
@@ -630,8 +630,8 @@ class P2S_Admin {
 		$allow = implode( "\n", $edge->allowlist() );
 		echo '<h3>Allowlist (paths that may receive uploads)</h3>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="p2s_edge_allow" />';
-		wp_nonce_field( 'p2s_edge_allow' );
+		echo '<input type="hidden" name="action" value="phpdef_edge_allow" />';
+		wp_nonce_field( 'phpdef_edge_allow' );
 		echo '<textarea name="allow" rows="5" class="p2s-input" style="max-width:520px">' . esc_textarea( $allow ) . '</textarea><br>';
 		submit_button( 'Save allowlist', 'secondary', 'submit', false );
 		echo '</form>';
@@ -642,7 +642,7 @@ class P2S_Admin {
 	}
 
 	protected function render_cloudflare( $r ) {
-		$cfg       = function_exists( 'p2s_cf_config' ) ? p2s_cf_config() : array();
+		$cfg       = function_exists( 'phpdef_cf_config' ) ? phpdef_cf_config() : array();
 		$connected = ! empty( $cfg['connected'] );
 		echo '<div class="p2s-card">';
 		$this->card_head( 'cloud', 'Cloudflare edge rule' );
@@ -656,8 +656,8 @@ class P2S_Admin {
 		if ( ! $connected ) {
 			echo '<p>Paste a Cloudflare API token with <strong>Zone &rsaquo; WAF &rsaquo; Edit</strong> permission. The plugin finds your zone automatically and can push the filter rule to the edge.</p>';
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			echo '<input type="hidden" name="action" value="p2s_cf_connect" />';
-			wp_nonce_field( 'p2s_cf' );
+			echo '<input type="hidden" name="action" value="phpdef_cf_connect" />';
+			wp_nonce_field( 'phpdef_cf' );
 			echo '<input type="password" name="cf_token" class="p2s-input" autocomplete="off" placeholder="Cloudflare API token" style="max-width:360px" /> ';
 			submit_button( 'Connect', 'primary', 'submit', false );
 			echo '</form>';
@@ -666,12 +666,12 @@ class P2S_Admin {
 			echo '<p>Connected to the zone for <code>' . esc_html( isset( $cfg['domain'] ) ? $cfg['domain'] : '' ) . '</code>.</p>';
 			if ( ! empty( $cfg['rule_on'] ) ) {
 				echo '<p class="p2s-verify p2s-ok-text">&#10003; The edge filter rule is deployed at Cloudflare.</p>';
-				$this->post_form( 'p2s_cf_remove', 'p2s_cf', 'Remove edge rule', 'secondary' );
+				$this->post_form( 'phpdef_cf_remove', 'phpdef_cf', 'Remove edge rule', 'secondary' );
 			} else {
-				$this->post_form( 'p2s_cf_deploy', 'p2s_cf', 'Deploy edge rule', 'primary' );
+				$this->post_form( 'phpdef_cf_deploy', 'phpdef_cf', 'Deploy edge rule', 'primary' );
 			}
-			$this->post_form( 'p2s_cf_disconnect', 'p2s_cf', 'Disconnect', 'secondary' );
-			echo '<p class="p2s-dim">Deploying adds one rule tagged "PHP2Shell Shield". Your other Cloudflare rules are left untouched.</p>';
+			$this->post_form( 'phpdef_cf_disconnect', 'phpdef_cf', 'Disconnect', 'secondary' );
+			echo '<p class="p2s-dim">Deploying adds one rule tagged "PHP Defender". Your other Cloudflare rules are left untouched.</p>';
 		}
 		echo '</div>';
 	}
@@ -688,13 +688,13 @@ class P2S_Admin {
 		if ( $lock->is_active() ) {
 			$ips = implode( ', ', $lock->allowed_ips() );
 			echo '<p class="p2s-verify p2s-bad-text">&#128274; Lockdown is <strong>ON</strong>. Allowed: ' . esc_html( $ips ) . '</p>';
-			$this->post_form( 'p2s_lock_disable', 'p2s_lock', 'Turn the site back online', 'primary' );
+			$this->post_form( 'phpdef_lock_disable', 'phpdef_lock', 'Turn the site back online', 'primary' );
 		} else {
-			$your_ip = p2s_remote_addr();
+			$your_ip = phpdef_remote_addr();
 			echo '<p>Your current IP is <code>' . esc_html( $your_ip ) . '</code>; it will be allowed in. Add another IP if you need one.</p>';
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'This takes your site offline for everyone except your IP. Continue?\');">';
-			echo '<input type="hidden" name="action" value="p2s_lock_enable" />';
-			wp_nonce_field( 'p2s_lock' );
+			echo '<input type="hidden" name="action" value="phpdef_lock_enable" />';
+			wp_nonce_field( 'phpdef_lock' );
 			echo '<input type="text" name="extra_ip" class="p2s-input" placeholder="Extra IP (optional)" style="max-width:220px" /> ';
 			submit_button( 'Take the site offline', 'delete', 'submit', false );
 			echo '</form>';
@@ -703,7 +703,7 @@ class P2S_Admin {
 	}
 
 	protected function render_keys() {
-		$keys    = new P2S_Keys();
+		$keys    = new Phpdef_Keys();
 		$present = $keys->detect();
 		echo '<div class="p2s-card">';
 		$this->card_head( 'key', 'Remote access keys' );
@@ -715,9 +715,9 @@ class P2S_Admin {
 		echo '<table class="widefat striped p2s-table"><tbody>';
 		foreach ( $present as $c ) {
 			$btn = '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline" onsubmit="return confirm(\'Deactivate this remote connection?\');">'
-				. '<input type="hidden" name="action" value="p2s_key_deactivate" />'
+				. '<input type="hidden" name="action" value="phpdef_key_deactivate" />'
 				. '<input type="hidden" name="key_id" value="' . esc_attr( $c['id'] ) . '" />'
-				. wp_nonce_field( 'p2s_keys', '_wpnonce', true, false )
+				. wp_nonce_field( 'phpdef_keys', '_wpnonce', true, false )
 				. get_submit_button( 'Deactivate', 'secondary small', 'submit', false )
 				. '</form>';
 			echo '<tr><th scope="row">' . esc_html( $c['name'] ) . '</th><td>' . $btn . '<p class="p2s-dim" style="margin:6px 0 0">' . wp_kses( $c['revoke'], array() ) . '</p></td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- composed above.
@@ -727,14 +727,14 @@ class P2S_Admin {
 	}
 
 	protected function render_scan() {
-		$res = p2s_opt_get( 'p2s_scan_result' );
+		$res = phpdef_opt_get( 'phpdef_scan_result' );
 		echo '<div class="p2s-card">';
 		$this->card_head( 'search', 'Breach check' );
 		echo '<p>PHP2Shell runs as your web user, and attacks started before the patch — so some sites are already compromised. This checks the common signs. It only reports; it never deletes anything.</p>';
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="p2s_scan_run" />';
-		wp_nonce_field( 'p2s_scan' );
+		echo '<input type="hidden" name="action" value="phpdef_scan_run" />';
+		wp_nonce_field( 'phpdef_scan' );
 		submit_button( is_array( $res ) ? 'Run scan again' : 'Run scan', 'primary', 'submit', false );
 		echo '</form>';
 		echo '<p class="p2s-dim">A scan checks files against WordPress.org and can take a little while on large sites.</p>';
@@ -803,14 +803,14 @@ class P2S_Admin {
 	}
 
 	protected function render_secrets() {
-		$secrets = new P2S_Secrets();
+		$secrets = new Phpdef_Secrets();
 		echo '<div class="p2s-card">';
 		$this->card_head( 'refresh', 'Secrets reset' );
 		echo '<p>PHP2Shell can leak memory that held passwords and keys. Rotating your WordPress security keys makes any stolen login session useless and signs everyone out.</p>';
 		echo '<p class="p2s-honest-inline"><strong>This signs out every user, including you.</strong> You will need to log in again straight after. Your original wp-config.php is backed up in the database first (never a web-accessible file).</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'Rotate security keys now? Everyone will be signed out.\');">';
-		echo '<input type="hidden" name="action" value="p2s_secrets_rotate" />';
-		wp_nonce_field( 'p2s_secrets' );
+		echo '<input type="hidden" name="action" value="phpdef_secrets_rotate" />';
+		wp_nonce_field( 'phpdef_secrets' );
 		submit_button( 'Rotate security keys', 'primary', 'submit', false );
 		echo '</form>';
 
@@ -819,8 +819,8 @@ class P2S_Admin {
 			$ago  = $when ? ' (' . esc_html( human_time_diff( $when ) ) . ' ago)' : '';
 			echo '<p class="p2s-dim">A backup of your previous <code>wp-config.php</code> is kept in the database' . $ago . ', not on disk. Once you have confirmed you can still log in, you can remove it (it holds your old keys).</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $ago is pre-escaped; rest is static.
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-			echo '<input type="hidden" name="action" value="p2s_secrets_discard" />';
-			wp_nonce_field( 'p2s_secrets_discard' );
+			echo '<input type="hidden" name="action" value="phpdef_secrets_discard" />';
+			wp_nonce_field( 'phpdef_secrets_discard' );
 			submit_button( 'Discard the backup', 'secondary', 'submit', false );
 			echo '</form>';
 		}
@@ -835,16 +835,16 @@ class P2S_Admin {
 	}
 
 	protected function render_phpcheck( $r ) {
-		$ready   = new P2S_PhpReady();
-		$res     = p2s_opt_get( 'p2s_phpcheck_result' );
+		$ready   = new Phpdef_PhpReady();
+		$res     = phpdef_opt_get( 'phpdef_phpcheck_result' );
 		$min     = $ready->min_target();
 		echo '<div class="p2s-card">';
 		$this->card_head( 'code', 'Can I upgrade safely?' );
 		echo '<p>Before you switch PHP (the real fix), this scans your active plugins and theme for code that newer PHP removed, so you know what &mdash; if anything &mdash; would break. The lowest PHP with an official PHP2Shell fix is <strong>' . esc_html( $min ) . '</strong>.</p>';
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="p2s_phpcheck" />';
-		wp_nonce_field( 'p2s_phpcheck' );
+		echo '<input type="hidden" name="action" value="phpdef_phpcheck" />';
+		wp_nonce_field( 'phpdef_phpcheck' );
 		echo '<label style="font-size:13px;color:#5e6e76">Target PHP: <select name="target" class="p2s-input" style="width:auto;min-width:110px;display:inline-block;margin:0 8px">';
 		foreach ( array( '8.2', '8.3', '8.4', '8.5' ) as $t ) {
 			echo '<option value="' . esc_attr( $t ) . '"' . selected( $t, $min, false ) . '>PHP ' . esc_html( $t ) . '</option>';
@@ -878,7 +878,7 @@ class P2S_Admin {
 	}
 
 	protected function render_phpswitch( $r ) {
-		$sw = new P2S_PhpSwitch();
+		$sw = new Phpdef_PhpSwitch();
 		$d  = $sw->detect();
 		echo '<div class="p2s-card">';
 		$this->card_head( 'server', 'Change PHP version' );
@@ -893,8 +893,8 @@ class P2S_Admin {
 			}
 			echo '<p class="p2s-honest-inline"><strong>Run the compatibility check above first.</strong> Switching to a version your code is not ready for could break the site — the auto-rollback is a safety net, not a guarantee. Pick a version your host has installed.</p>';
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'Switch PHP now? The plugin will auto-revert if your site does not come up on the new version.\');">';
-			echo '<input type="hidden" name="action" value="p2s_phpswitch" />';
-			wp_nonce_field( 'p2s_phpswitch' );
+			echo '<input type="hidden" name="action" value="phpdef_phpswitch" />';
+			wp_nonce_field( 'phpdef_phpswitch' );
 			echo '<label style="font-size:13px;color:#5e6e76">Switch to: <select name="version" class="p2s-input" style="width:auto;min-width:110px;display:inline-block;margin:0 8px">';
 			foreach ( $options as $o ) {
 				if ( $o === $d['current'] ) {
@@ -964,8 +964,8 @@ class P2S_Admin {
 
 		echo '</tbody></table>';
 
-		echo '<form method="get" class="p2s-rescan"><input type="hidden" name="page" value="' . esc_attr( P2S_SLUG ) . '" />';
-		submit_button( 'Re-scan', 'secondary', 'p2s_rescan', false );
+		echo '<form method="get" class="p2s-rescan"><input type="hidden" name="page" value="' . esc_attr( PHPDEF_SLUG ) . '" />';
+		submit_button( 'Re-scan', 'secondary', 'phpdef_rescan', false );
 		echo '</form></div>';
 	}
 

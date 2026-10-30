@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/shield.svg" width="88" height="88" alt="PHP2Shell Shield logo">
+  <img src="assets/shield.svg" width="88" height="88" alt="PHP Defender logo">
 </p>
 
-<h1 align="center">PHP2Shell Shield</h1>
+<h1 align="center">PHP Defender – Old PHP Versions Shield</h1>
 
 <p align="center">
   <strong>WordPress Security Plugin</strong><br>
@@ -31,7 +31,7 @@
 > **This is a shield, not a cure.** The only real fix for PHP2Shell is updating PHP to a fixed version (8.2.35, 8.3.36, 8.4.27 or 8.5.12). This plugin is for the gap until then — it lowers risk, tells you if you were already hit, and gives you an emergency switch. It cannot make an unpatched server perfectly safe.
 
 <p align="center">
-  <img src="assets/screenshot-dashboard.png" alt="PHP2Shell Shield dashboard" width="880">
+  <img src="assets/screenshot-dashboard.png" alt="PHP Defender dashboard" width="880">
   <br><sub>The dashboard — live status, a protection-layers meter, and a defense pipeline showing requests stopped before PHP.</sub>
 </p>
 
@@ -41,7 +41,7 @@ Think of your website as a **shop**, and **PHP** as the electrical system the wh
 
 The proper fix is replacing the faulty wiring — **updating PHP**. But lots of owners are scared that'll knock over their displays (break their site), so they put it off and stay exposed.
 
-Ordinary security plugins are a guard standing **inside** the shop — but the burglar strikes **in the wiring, before he ever reaches the shop floor**, so the inside guard never sees him. **PHP2Shell Shield is different: it places guards _outside_, at the street and the front door, so the burglar is stopped before he can reach the wiring.** That's the whole trick, and it's why it can protect sites that can't update PHP.
+Ordinary security plugins are a guard standing **inside** the shop — but the burglar strikes **in the wiring, before he ever reaches the shop floor**, so the inside guard never sees him. **PHP Defender is different: it places guards _outside_, at the street and the front door, so the burglar is stopped before he can reach the wiring.** That's the whole trick, and it's why it can protect sites that can't update PHP.
 
 What each part does, in plain terms:
 
@@ -107,17 +107,17 @@ Every feature is user-initiated, reversible, and shown plainly — the plugin ne
 
 ## Install
 
-Download the latest `php2shell-shield-vX.Y.Z.zip` from the releases, then in WordPress: Plugins → Add New → Upload. Or copy the `php2shell-shield` folder into `wp-content/plugins/`.
+Download the latest `php-defender-vX.Y.Z.zip` from the releases, then in WordPress: Plugins → Add New → Upload. Or copy the `php-defender` folder into `wp-content/plugins/`.
 
 ## Build
 
 ```bash
-./build.sh   # produces dist/php2shell-shield-vX.Y.Z.zip
+./build.sh   # produces dist/php-defender-vX.Y.Z.zip
 ```
 
 ## Rule packs & signing
 
-Rule packs are signed with a private key that is **never** committed (see [`keys/README.md`](keys/README.md)). The public key ships in `packs/signing-key.pub`.
+Rule packs are signed with a private key that is **never** committed (see [`keys/README.md`](keys/README.md)). The public key ships in `packs/signing-key.php`.
 
 ```bash
 ./tools/gen-keys.sh                                                  # once, to create the keypair

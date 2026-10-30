@@ -1,6 +1,6 @@
 <?php
 /**
- * Secrets reset for PHP2Shell Shield.
+ * Secrets reset for PHP Defender.
  *
  * PHP2Shell can leak memory that held passwords, API keys, and session data.
  * This rotates WordPress's eight auth keys/salts in wp-config.php, which
@@ -19,14 +19,14 @@
  * The rotate() transform is pure and testable; file handling uses WordPress-ish
  * paths but no WordPress functions, so it can be exercised from the CLI too.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Secrets {
+class Phpdef_Secrets {
 
 	/** The eight constants WordPress uses for auth keys and salts. */
 	public function keys() {
@@ -67,7 +67,7 @@ class P2S_Secrets {
 		$before  = substr_count( $content, 'define' );
 
 		foreach ( $this->keys() as $key ) {
-			$value = ( is_array( $newvals ) && isset( $newvals[ $key ] ) ) ? $newvals[ $key ] : p2s_random_string( 64 );
+			$value = ( is_array( $newvals ) && isset( $newvals[ $key ] ) ) ? $newvals[ $key ] : phpdef_random_string( 64 );
 			// Match the whole single line that defines this key.
 			$pattern = '/^[^\r\n]*\bdefine\s*\(\s*([\'"])' . $key . '\1.*$/m';
 			if ( ! preg_match( $pattern, $content ) ) {
@@ -78,7 +78,7 @@ class P2S_Secrets {
 			// Callback keeps the replacement literal (no backref surprises).
 			$content = preg_replace_callback(
 				$pattern,
-				create_p2s_literal( $replacement ),
+				create_phpdef_literal( $replacement ),
 				$content,
 				1
 			);
@@ -128,19 +128,19 @@ class P2S_Secrets {
 
 	/** Is there a stored pre-rotation backup? */
 	public function has_backup() {
-		$b = p2s_opt_get( 'p2s_secrets_backup' );
+		$b = phpdef_opt_get( 'phpdef_secrets_backup' );
 		return ( is_array( $b ) && ! empty( $b['content'] ) );
 	}
 
 	/** When the backup was taken (unix time), or 0. */
 	public function backup_time() {
-		$b = p2s_opt_get( 'p2s_secrets_backup' );
+		$b = phpdef_opt_get( 'phpdef_secrets_backup' );
 		return ( is_array( $b ) && isset( $b['ts'] ) ) ? (int) $b['ts'] : 0;
 	}
 
 	/** Remove the stored backup (clears the old secrets from the database). */
 	public function discard_backup() {
-		p2s_opt_delete( 'p2s_secrets_backup' );
+		phpdef_opt_delete( 'phpdef_secrets_backup' );
 		return array( 'ok' => true );
 	}
 
@@ -170,11 +170,11 @@ class P2S_Secrets {
 		// Back up the original in the database before touching the live file.
 		// It contains the old keys/salts, so it must never be a web-readable
 		// file; obfuscate it so it is not plain text at rest either.
-		p2s_opt_set(
-			'p2s_secrets_backup',
+		phpdef_opt_set(
+			'phpdef_secrets_backup',
 			array(
 				'ts'      => time(),
-				'content' => p2s_obfuscate( $content ),
+				'content' => phpdef_obfuscate( $content ),
 			)
 		);
 
@@ -214,7 +214,7 @@ class P2S_Secrets {
 	}
 }
 
-if ( ! function_exists( 'create_p2s_literal' ) ) {
+if ( ! function_exists( 'create_phpdef_literal' ) ) {
 	/**
 	 * Return a callback that outputs a fixed literal, for preg_replace_callback.
 	 * (A small closure factory so PHP 5.4 keeps a single code path.)
@@ -222,7 +222,7 @@ if ( ! function_exists( 'create_p2s_literal' ) ) {
 	 * @param string $literal The exact replacement text.
 	 * @return callable
 	 */
-	function create_p2s_literal( $literal ) {
+	function create_phpdef_literal( $literal ) {
 		return function ( $m ) use ( $literal ) {
 			return $literal;
 		};

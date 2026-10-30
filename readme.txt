@@ -1,10 +1,10 @@
-=== PHP2Shell Shield ===
+=== PHP Defender – Old PHP Versions Shield ===
 Contributors: abodystudios
-Tags: security, php2shell, hardening, vulnerability, cve
+Tags: security, php, hardening, vulnerability, firewall
 Requires at least: 3.6
 Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,10 +67,10 @@ The plugin does not phone home and sends no data anywhere else.
 
 == Installation ==
 
-1. Upload the `php2shell-shield` folder to `/wp-content/plugins/`, or install
+1. Upload the `php-defender` folder to `/wp-content/plugins/`, or install
    the zip from Plugins ' Add New ' Upload.
 2. Activate it.
-3. Open **PHP2Shell Shield** in the admin menu and follow the status screen.
+3. Open **PHP Defender** in the admin menu and follow the status screen.
 
 == Frequently Asked Questions ==
 
@@ -107,6 +107,13 @@ https://github.com/AbodyStudio/php2shell-shield/issues .
 3. Signed threat definitions and the copy-paste snippet for your host.
 
 == Changelog ==
+
+= 1.5.0 =
+* Renamed to "PHP Defender - Old PHP Versions Shield". The plugin no longer uses the coined vulnerability name in its name or slug; the vulnerability is still referred to plainly by that name and its CVE IDs where it helps you understand what the plugin defends against.
+* The WordPress auth keys/salts backup taken before a secrets reset is now stored in the database instead of in the uploads folder, so the plugin writes nothing to a disallowed location.
+* Hardened the edge-filter allowlist input (each path is sanitised, normalised, and capped) before it is written to server config.
+* The bundled public signing key now ships as a PHP file rather than a bare key file.
+* Minimum PHP raised to 7.0 to match the WordPress.org directory floor (the code still avoids newer-only syntax, so manual installs keep working on older PHP).
 
 = 1.4.0 =
 * Stronger, advisory-complete mitigations:
@@ -147,7 +154,7 @@ https://github.com/AbodyStudio/php2shell-shield/issues .
   plain-language "How it works" section, icons on every panel, and clearer
   grouping (Protection / More protection / Check & recover / Details).
 * Fixed the manual snippet boxes so the code is always clearly visible.
-* The plugin's menu icon is now the PHP2Shell Shield shield.
+* The plugin's menu icon is now the PHP Defender shield.
 * Broader WordPress compatibility (WordPress 4.0+).
 
 = 1.0.0 =

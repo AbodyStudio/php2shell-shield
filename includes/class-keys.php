@@ -1,6 +1,6 @@
 <?php
 /**
- * Remote-access key audit for PHP2Shell Shield.
+ * Remote-access key audit for PHP Defender.
  *
  * Remote-management connectors are a master key to the whole site: whoever
  * holds the key can install plugins and run code. The UpdraftCentral incident
@@ -15,14 +15,14 @@
  * The detection logic is pure (takes the active-plugin list) so it can be
  * tested from the CLI; deactivation uses WordPress and is guarded.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Keys {
+class Phpdef_Keys {
 
 	/**
 	 * Known remote-management connectors.

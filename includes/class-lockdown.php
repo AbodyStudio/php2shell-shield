@@ -1,6 +1,6 @@
 <?php
 /**
- * Lockdown switch for PHP2Shell Shield — the "take it offline" button.
+ * Lockdown switch for PHP Defender — the "take it offline" button.
  *
  * Writes an .htaccess block that denies all access except from the owner's
  * IP(s), and serves a static maintenance page to everyone else. Because the
@@ -13,26 +13,26 @@
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Lockdown {
+class Phpdef_Lockdown {
 
 	const LABEL = 'Lockdown';
 	const PAGE  = 'p2s-maintenance.html';
 
-	/** @var P2S_Files */
+	/** @var Phpdef_Files */
 	protected $files;
 
 	public function __construct( $base = null ) {
 		if ( null === $base ) {
 			$base = defined( 'ABSPATH' ) ? ABSPATH : getcwd();
 		}
-		$this->files = new P2S_Files( $base );
+		$this->files = new Phpdef_Files( $base );
 	}
 
 	/**
@@ -112,39 +112,39 @@ class P2S_Lockdown {
 		}
 
 		$content = $this->files->read( '.htaccess' );
-		if ( null === p2s_opt_get( 'p2s_lock_backup' ) ) {
-			p2s_opt_set( 'p2s_lock_backup', array( 'existed' => $this->files->exists( '.htaccess' ) ? 1 : 0 ) );
+		if ( null === phpdef_opt_get( 'phpdef_lock_backup' ) ) {
+			phpdef_opt_set( 'phpdef_lock_backup', array( 'existed' => $this->files->exists( '.htaccess' ) ? 1 : 0 ) );
 		}
 		$new = $this->files->set_block( $content, $this->htaccess_lines( $ips ), '.htaccess', self::LABEL );
 		if ( ! $this->files->write( '.htaccess', $new ) ) {
 			return array( 'ok' => false, 'reason' => 'write_failed' );
 		}
-		p2s_opt_set( 'p2s_lock', array( 'active' => 1, 'ips' => $ips, 'at' => time() ) );
+		phpdef_opt_set( 'phpdef_lock', array( 'active' => 1, 'ips' => $ips, 'at' => time() ) );
 		return array( 'ok' => true, 'ips' => $ips );
 	}
 
 	public function disable() {
 		$content  = $this->files->read( '.htaccess' );
 		$stripped = $this->files->strip_block( $content, self::LABEL );
-		$backup   = p2s_opt_get( 'p2s_lock_backup' );
+		$backup   = phpdef_opt_get( 'phpdef_lock_backup' );
 		if ( is_array( $backup ) && empty( $backup['existed'] ) && '' === trim( $stripped ) ) {
 			$this->files->delete( '.htaccess' );
 		} else {
 			$this->files->write( '.htaccess', $stripped );
 		}
 		$this->files->delete( self::PAGE );
-		p2s_opt_set( 'p2s_lock', array( 'active' => 0 ) );
-		p2s_opt_delete( 'p2s_lock_backup' );
+		phpdef_opt_set( 'phpdef_lock', array( 'active' => 0 ) );
+		phpdef_opt_delete( 'phpdef_lock_backup' );
 		return array( 'ok' => true );
 	}
 
 	public function is_active() {
-		$s = p2s_opt_get( 'p2s_lock' );
+		$s = phpdef_opt_get( 'phpdef_lock' );
 		return ( is_array( $s ) && ! empty( $s['active'] ) );
 	}
 
 	public function allowed_ips() {
-		$s = p2s_opt_get( 'p2s_lock' );
+		$s = phpdef_opt_get( 'phpdef_lock' );
 		if ( is_array( $s ) && isset( $s['ips'] ) ) {
 			return $s['ips'];
 		}
@@ -158,7 +158,7 @@ class P2S_Lockdown {
 		}
 		foreach ( $ips as $ip ) {
 			$ip = trim( (string) $ip );
-			if ( p2s_is_ip( $ip ) && ! in_array( $ip, $out, true ) ) {
+			if ( phpdef_is_ip( $ip ) && ! in_array( $ip, $out, true ) ) {
 				$out[] = $ip;
 			}
 		}

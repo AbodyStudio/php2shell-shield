@@ -1,6 +1,6 @@
 <?php
 /**
- * Safe config-file editing for PHP2Shell Shield.
+ * Safe config-file editing for PHP Defender.
  *
  * Only ever touches a block between our own sentinels, so the rest of the
  * user's file is never disturbed. Writes atomically (temp file + rename) so a
@@ -9,17 +9,17 @@
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Files {
+class Phpdef_Files {
 
-	const BEGIN = 'BEGIN PHP2Shell Shield';
-	const END   = 'END PHP2Shell Shield';
+	const BEGIN = 'BEGIN PHP Defender';
+	const END   = 'END PHP Defender';
 
 	/**
 	 * Base directory we are allowed to write into (normally ABSPATH).

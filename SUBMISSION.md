@@ -1,4 +1,4 @@
-# WordPress.org submission package — PHP2Shell Shield
+# WordPress.org submission package — PHP Defender
 
 Everything needed to submit to the WordPress.org plugin directory, plus the
 compliance work to do **before** submitting. (This file is a dev doc; it is not
@@ -10,8 +10,8 @@ shipped in the plugin zip.)
 
 | Field | Value |
 |---|---|
-| Plugin name | **PHP2Shell Shield** |
-| Proposed slug | `php2shell-shield` |
+| Plugin name | **PHP Defender** |
+| Proposed slug | `php-defender` |
 | Current version | 1.3.1 |
 | License | GPL-2.0-or-later |
 | Requires at least | WordPress 4.0 |
@@ -61,7 +61,7 @@ the directory listing text. Key beats:
 
 ## 5. Note to the Plugin Review Team (paste into the submission message)
 
-> **What it does:** PHP2Shell Shield helps WordPress sites running an affected,
+> **What it does:** PHP Defender helps WordPress sites running an affected,
 > un-updatable PHP version reduce their exposure to the PHP2Shell remote code
 > execution flaw (CVE-2026-109618 / CVE-2026-109619), and then move onto a fixed
 > PHP version safely. It is framed throughout as risk reduction, not a fix — it
@@ -109,7 +109,7 @@ the directory listing text. Key beats:
 
 ## 6. Compliance status (Plugin Check)
 
-**Submit the `.org` build:** `./build.sh dotorg` → `dist/php2shell-shield-vX.Y.Z-wporg.zip`.
+**Submit the `.org` build:** `./build.sh dotorg` → `dist/php-defender-vX.Y.Z-wporg.zip`.
 It omits the self-updater; the main file loads that file only if present.
 
 Done (v1.3.2):

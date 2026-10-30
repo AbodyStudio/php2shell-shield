@@ -1,6 +1,6 @@
 <?php
 /**
- * Uninstall cleanup for PHP2Shell Shield.
+ * Uninstall cleanup for PHP Defender.
  *
  * Removes the plugin's options. It intentionally does NOT remove any .htaccess
  * / .user.ini shield the user has turned on, because those protect the site and
@@ -8,30 +8,30 @@
  * shield, filter and lockdown OFF before deleting the plugin if you want them
  * removed.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-$p2s_options = array(
-	'p2s_version',
-	'p2s_setup_done',
-	'p2s_shield',
-	'p2s_backup',
-	'p2s_secrets_backup',
-	'p2s_edge',
-	'p2s_edge_allow',
-	'p2s_edge_backup',
-	'p2s_cf',
-	'p2s_lock',
-	'p2s_lock_backup',
-	'p2s_scan_result',
-	'p2s_phpcheck_result',
-	'p2s_phpswitch_backup',
+$phpdef_options = array(
+	'phpdef_version',
+	'phpdef_setup_done',
+	'phpdef_shield',
+	'phpdef_backup',
+	'phpdef_secrets_backup',
+	'phpdef_edge',
+	'phpdef_edge_allow',
+	'phpdef_edge_backup',
+	'phpdef_cf',
+	'phpdef_lock',
+	'phpdef_lock_backup',
+	'phpdef_scan_result',
+	'phpdef_phpcheck_result',
+	'phpdef_phpswitch_backup',
 );
 
-foreach ( $p2s_options as $p2s_opt ) {
-	delete_option( $p2s_opt );
+foreach ( $phpdef_options as $phpdef_opt ) {
+	delete_option( $phpdef_opt );
 }

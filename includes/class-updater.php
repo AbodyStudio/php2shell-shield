@@ -1,6 +1,6 @@
 <?php
 /**
- * GitHub auto-updater for PHP2Shell Shield — with signed-download verification.
+ * GitHub auto-updater for PHP Defender — with signed-download verification.
  *
  * Hooks into WordPress's own plugin-update system so updates appear and install
  * like any other plugin, but pulls from this plugin's GitHub Releases instead of
@@ -16,26 +16,26 @@
  *
  * Stays PHP 5.4 compatible.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Updater {
+class Phpdef_Updater {
 
 	/** @var string owner/repo */
 	protected $repo = 'AbodyStudio/php2shell-shield';
 
-	/** @var string e.g. php2shell-shield/php2shell-shield.php */
+	/** @var string e.g. php-defender/php-defender.php */
 	protected $basename;
 
-	/** @var string e.g. php2shell-shield */
+	/** @var string e.g. php-defender */
 	protected $slug;
 
 	public function __construct() {
-		$this->basename = defined( 'P2S_FILE' ) && function_exists( 'plugin_basename' ) ? plugin_basename( P2S_FILE ) : 'php2shell-shield/php2shell-shield.php';
+		$this->basename = defined( 'PHPDEF_FILE' ) && function_exists( 'plugin_basename' ) ? plugin_basename( PHPDEF_FILE ) : 'php-defender/php-defender.php';
 		$this->slug     = dirname( $this->basename );
 
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check' ) );
@@ -83,7 +83,7 @@ class P2S_Updater {
 	}
 
 	protected function latest() {
-		$cached = get_site_transient( 'p2s_gh_release' );
+		$cached = get_site_transient( 'phpdef_gh_release' );
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
@@ -99,11 +99,11 @@ class P2S_Updater {
 		);
 		if ( is_wp_error( $resp ) || 200 !== (int) wp_remote_retrieve_response_code( $resp ) ) {
 			$fail = array( 'ok' => false );
-			set_site_transient( 'p2s_gh_release', $fail, 2 * HOUR_IN_SECONDS );
+			set_site_transient( 'phpdef_gh_release', $fail, 2 * HOUR_IN_SECONDS );
 			return $fail;
 		}
 		$out = $this->parse_release( wp_remote_retrieve_body( $resp ) );
-		set_site_transient( 'p2s_gh_release', $out, 12 * HOUR_IN_SECONDS );
+		set_site_transient( 'phpdef_gh_release', $out, 12 * HOUR_IN_SECONDS );
 		return $out;
 	}
 
@@ -118,7 +118,7 @@ class P2S_Updater {
 			return $transient;
 		}
 
-		if ( version_compare( $r['version'], P2S_VERSION, '>' ) ) {
+		if ( version_compare( $r['version'], PHPDEF_VERSION, '>' ) ) {
 			$obj = array(
 				'slug'        => $this->slug,
 				'plugin'      => $this->basename,
@@ -134,7 +134,7 @@ class P2S_Updater {
 			$obj = array(
 				'slug'        => $this->slug,
 				'plugin'      => $this->basename,
-				'new_version' => P2S_VERSION,
+				'new_version' => PHPDEF_VERSION,
 				'url'         => 'https://github.com/' . $this->repo,
 				'package'     => '',
 			);
@@ -156,11 +156,11 @@ class P2S_Updater {
 			return $res;
 		}
 		$r         = $this->latest();
-		$version   = ! empty( $r['ok'] ) ? $r['version'] : P2S_VERSION;
+		$version   = ! empty( $r['ok'] ) ? $r['version'] : PHPDEF_VERSION;
 		$changelog = ( ! empty( $r['body'] ) ) ? wpautop( wp_kses_post( $r['body'] ) ) : 'See the GitHub releases page.';
 
 		return (object) array(
-			'name'          => 'PHP2Shell Shield',
+			'name'          => 'PHP Defender',
 			'slug'          => $this->slug,
 			'version'       => $version,
 			'author'        => '<a href="https://abodystudio.com">AbodyStudio</a>',
@@ -193,7 +193,7 @@ class P2S_Updater {
 		}
 
 		if ( '' === $r['sig'] ) {
-			return new WP_Error( 'p2s_no_sig', 'PHP2Shell Shield: this update has no signature, so it was not installed. Download it manually from GitHub if you trust it.' );
+			return new WP_Error( 'phpdef_no_sig', 'PHP Defender: this update has no signature, so it was not installed. Download it manually from GitHub if you trust it.' );
 		}
 
 		if ( ! function_exists( 'download_url' ) ) {
@@ -208,14 +208,14 @@ class P2S_Updater {
 		$sig_resp = wp_remote_get( $r['sig'], array( 'timeout' => 30 ) );
 		if ( is_wp_error( $sig_resp ) || 200 !== (int) wp_remote_retrieve_response_code( $sig_resp ) ) {
 			$this->rm( $tmp );
-			return new WP_Error( 'p2s_sig_fetch', 'PHP2Shell Shield: could not fetch the update signature, so the update was not installed.' );
+			return new WP_Error( 'phpdef_sig_fetch', 'PHP Defender: could not fetch the update signature, so the update was not installed.' );
 		}
 		$sig_b64 = wp_remote_retrieve_body( $sig_resp );
 
 		$bytes = file_get_contents( $tmp );
 		if ( false === $bytes || ! $this->verify_bytes( $bytes, $sig_b64 ) ) {
 			$this->rm( $tmp );
-			return new WP_Error( 'p2s_bad_sig', 'PHP2Shell Shield: the update signature did not match. The download may be tampered with, so installation was blocked.' );
+			return new WP_Error( 'phpdef_bad_sig', 'PHP Defender: the update signature did not match. The download may be tampered with, so installation was blocked.' );
 		}
 
 		return $tmp; // Verified — WordPress installs this file.
@@ -223,13 +223,13 @@ class P2S_Updater {
 
 	/** Verify a base64 signature over $data using the plugin's public key. */
 	protected function verify_bytes( $data, $sig_b64 ) {
-		if ( function_exists( 'p2s_engine' ) ) {
-			return p2s_engine()->verify_bytes( $data, $sig_b64 );
+		if ( function_exists( 'phpdef_engine' ) ) {
+			return phpdef_engine()->verify_bytes( $data, $sig_b64 );
 		}
 		if ( ! function_exists( 'openssl_verify' ) ) {
 			return false;
 		}
-		$pub = @file_get_contents( P2S_DIR . 'packs/signing-key.pub' );
+		$pub = @file_get_contents( PHPDEF_DIR . 'packs/signing-key.pub' );
 		if ( ! $pub ) {
 			return false;
 		}

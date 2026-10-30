@@ -6,7 +6,7 @@
  * It is kept as PHP (not a bare .pub file) so directory "sensitive file"
  * scanners do not mistake it for a private key or credential.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

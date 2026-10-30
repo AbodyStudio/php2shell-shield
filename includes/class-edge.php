@@ -1,6 +1,6 @@
 <?php
 /**
- * Edge request filter for PHP2Shell Shield.
+ * Edge request filter for PHP Defender.
  *
  * CVE-2026-109619 is reached through multipart/form-data uploads (via
  * session.upload_progress). PHP's own advice for sites that do not need it is
@@ -12,22 +12,22 @@
  * It is surface reduction, not a precise exploit signature, and it CAN affect
  * front-end forms and uploads — so it is opt-in and the allowlist is editable.
  * The same rule can be applied three ways: Apache/LiteSpeed .htaccess (written
- * here), Cloudflare (via P2S_Cloudflare), or an nginx snippet (generated here).
+ * here), Cloudflare (via Phpdef_Cloudflare), or an nginx snippet (generated here).
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP2Shell_Shield
+ * @package PHP_Defender
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class P2S_Edge {
+class Phpdef_Edge {
 
 	const LABEL = 'Filter';
 
-	/** @var P2S_Files */
+	/** @var Phpdef_Files */
 	protected $files;
 
 	/** @var array Detection report. */
@@ -37,7 +37,7 @@ class P2S_Edge {
 		if ( null === $base ) {
 			$base = defined( 'ABSPATH' ) ? ABSPATH : getcwd();
 		}
-		$this->files  = new P2S_Files( $base );
+		$this->files  = new Phpdef_Files( $base );
 		$this->report = is_array( $report ) ? $report : array();
 	}
 
@@ -48,7 +48,7 @@ class P2S_Edge {
 	}
 
 	public function allowlist() {
-		$a = p2s_opt_get( 'p2s_edge_allow' );
+		$a = phpdef_opt_get( 'phpdef_edge_allow' );
 		if ( is_array( $a ) ) {
 			return $a;
 		}
@@ -95,7 +95,7 @@ class P2S_Edge {
 		if ( empty( $clean ) ) {
 			$clean = $this->default_allowlist();
 		}
-		p2s_opt_set( 'p2s_edge_allow', $clean );
+		phpdef_opt_set( 'phpdef_edge_allow', $clean );
 		return $clean;
 	}
 
@@ -148,18 +148,18 @@ class P2S_Edge {
 	public function nginx_snippet() {
 		$allow = $this->allowlist();
 		$out   = array();
-		$out[] = '# PHP2Shell Shield — add inside your server { } block, then reload nginx.';
+		$out[] = '# PHP Defender — add inside your server { } block, then reload nginx.';
 		$out[] = '# Blocks multipart/form-data POSTs except on allowlisted paths.';
-		$out[] = 'set $p2s_block 0;';
-		$out[] = 'if ($request_method = POST) { set $p2s_block "${p2s_block}1"; }';
-		$out[] = 'if ($http_content_type ~* multipart/form-data) { set $p2s_block "${p2s_block}2"; }';
+		$out[] = 'set $phpdef_block 0;';
+		$out[] = 'if ($request_method = POST) { set $phpdef_block "${phpdef_block}1"; }';
+		$out[] = 'if ($http_content_type ~* multipart/form-data) { set $phpdef_block "${phpdef_block}2"; }';
 		foreach ( $allow as $path ) {
 			// Escape for the nginx regex even though set_allowlist() already
 			// restricts the characters — defence in depth for the rule syntax.
-			$out[] = 'if ($uri ~* "^' . preg_quote( $path, '' ) . '") { set $p2s_block "${p2s_block}9"; }';
+			$out[] = 'if ($uri ~* "^' . preg_quote( $path, '' ) . '") { set $phpdef_block "${phpdef_block}9"; }';
 		}
 		$out[] = '# Block only when POST(1) + multipart(2) and no allow(9) matched:';
-		$out[] = 'if ($p2s_block = "012") { return 403; }';
+		$out[] = 'if ($phpdef_block = "012") { return 403; }';
 		return implode( "\n", $out );
 	}
 
@@ -179,33 +179,33 @@ class P2S_Edge {
 			return array( 'ok' => false, 'reason' => 'cannot_write', 'snippet' => $this->nginx_snippet() );
 		}
 		$content = $this->files->read( '.htaccess' );
-		if ( null === p2s_opt_get( 'p2s_edge_backup' ) ) {
-			p2s_opt_set( 'p2s_edge_backup', array( 'existed' => $this->files->exists( '.htaccess' ) ? 1 : 0 ) );
+		if ( null === phpdef_opt_get( 'phpdef_edge_backup' ) ) {
+			phpdef_opt_set( 'phpdef_edge_backup', array( 'existed' => $this->files->exists( '.htaccess' ) ? 1 : 0 ) );
 		}
 		$new = $this->files->set_block( $content, $this->htaccess_lines(), '.htaccess', self::LABEL );
 		if ( ! $this->files->write( '.htaccess', $new ) ) {
 			return array( 'ok' => false, 'reason' => 'write_failed', 'snippet' => $this->nginx_snippet() );
 		}
-		p2s_opt_set( 'p2s_edge', array( 'active' => 1, 'at' => time() ) );
+		phpdef_opt_set( 'phpdef_edge', array( 'active' => 1, 'at' => time() ) );
 		return array( 'ok' => true );
 	}
 
 	public function disable_htaccess() {
 		$content  = $this->files->read( '.htaccess' );
 		$stripped = $this->files->strip_block( $content, self::LABEL );
-		$backup   = p2s_opt_get( 'p2s_edge_backup' );
+		$backup   = phpdef_opt_get( 'phpdef_edge_backup' );
 		if ( is_array( $backup ) && empty( $backup['existed'] ) && '' === trim( $stripped ) ) {
 			$this->files->delete( '.htaccess' );
 		} else {
 			$this->files->write( '.htaccess', $stripped );
 		}
-		p2s_opt_set( 'p2s_edge', array( 'active' => 0 ) );
-		p2s_opt_delete( 'p2s_edge_backup' );
+		phpdef_opt_set( 'phpdef_edge', array( 'active' => 0 ) );
+		phpdef_opt_delete( 'phpdef_edge_backup' );
 		return array( 'ok' => true );
 	}
 
 	public function is_active() {
-		$s = p2s_opt_get( 'p2s_edge' );
+		$s = phpdef_opt_get( 'phpdef_edge' );
 		return ( is_array( $s ) && ! empty( $s['active'] ) );
 	}
 }
