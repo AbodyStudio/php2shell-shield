@@ -1,6 +1,6 @@
-# PHP Defender — v1 Plan
+# AbodyStudio Shield — v1 Plan
 
-**Name:** PHP Defender
+**Name:** AbodyStudio Shield
 **Tagline:** Block the exploit. Protect your site.
 **Type:** Distributable WordPress plugin (install a zip, click one button)
 **License/distribution:** Open source — WordPress.org + GitHub, plus my own and client sites
@@ -173,7 +173,7 @@ PHP2Shell can leak memory containing passwords and API keys:
 ## 8. Open-source + signing model (settled)
 
 Open source means the verification code is public, so the signing has to be done right:
-- A **dedicated PHP Defender signing keypair** — *not* reused from Fatoura/Destina (keeps blast
+- A **dedicated AbodyStudio Shield signing keypair** — *not* reused from Fatoura/Destina (keeps blast
   radius separate).
 - The **public key ships inside the plugin**; the **private key stays offline** with you and signs
   each rule pack. The private key never goes in the GitHub repo.
@@ -189,8 +189,8 @@ draw scrutiny) — e.g. more explicit opt-in prompts. Same codebase, a complianc
 ## 9. Plugin structure (sketch)
 
 ```
-php-defender/
-├── php-defender.php         # bootstrap, header, activation/deactivation
+abodystudio-old-php-versions-shield/
+├── abodystudio-old-php-versions-shield.php         # bootstrap, header, activation/deactivation
 ├── readme.txt                   # WordPress.org format; honesty rule up top
 ├── includes/
 │   ├── class-engine.php          # rule-pack loader + signature verify
@@ -256,7 +256,7 @@ The plugin writes server/edge config and holds clean-up keys, so it's a target.
 
 ## 12. Build & test approach
 
-- `_src` + `build.sh` → versioned zip (`php-defender-vX.Y.Z.zip`), same shape as your Fatoura/Arida patches.
+- `_src` + `build.sh` → versioned zip (`abodystudio-old-php-versions-shield-vX.Y.Z.zip`), same shape as your Fatoura/Arida patches.
 - Old-PHP test matrix (throwaway containers/VMs): PHP 5.6, 7.4, 8.1, **8.2**, 8.3 — confirm writer +
   verifier + detection behave per SAPI.
 - `test.sh`: pack-signature check, settings-writer round-trip (write → verify → undo), edge snippet
@@ -283,7 +283,7 @@ The plugin writes server/edge config and holds clean-up keys, so it's a target.
 
 | Question | Decision |
 |---|---|
-| Name | **PHP Defender** (banner + tagline already made) |
+| Name | **AbodyStudio Shield** (banner + tagline already made) |
 | Distribution | Open source — WordPress.org + GitHub, plus my own and client sites |
 | Hosts | **All server types**, auto-detected at setup; full shield on Apache/LiteSpeed + Cloudflare, snippets for NGINX/IIS |
 | Cloudflare | **Yes — edge rule built into v1** (now component 6.5) |

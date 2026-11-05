@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build an installable WordPress plugin zip for PHP Defender.
+# Build an installable WordPress plugin zip for AbodyStudio Shield.
 #
 #   ./build.sh           GitHub build (includes the signed self-updater; signs the zip)
 #   ./build.sh dotorg    WordPress.org build (omits the self-updater; no signature)
@@ -7,7 +7,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-SLUG="php-defender"
+SLUG="abodystudio-old-php-versions-shield"
 MODE="${1:-github}"
 VERSION=$(grep -m1 "Version:" "${SLUG}.php" | sed -E 's/.*Version:[[:space:]]*([0-9.]+).*/\1/')
 

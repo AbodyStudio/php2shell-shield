@@ -1,6 +1,6 @@
 <?php
 /**
- * PHP upgrade-readiness scanner for PHP Defender.
+ * PHP upgrade-readiness scanner for AbodyStudio Shield.
  *
  * Helps a site owner decide whether they can safely move to a newer PHP (the
  * real fix for PHP2Shell) by scanning their active plugins and theme for
@@ -15,14 +15,14 @@
  * The rule set and scan functions are pure (no WordPress) so they can be tested
  * from the CLI; the gather step uses WordPress and is guarded.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_PhpReady {
+class Abody_PhpReady {
 
 	/** Lowest PHP branch with an official PHP2Shell fix — the upgrade floor. */
 	public function min_target() {

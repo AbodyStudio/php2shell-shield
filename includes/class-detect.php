@@ -1,6 +1,6 @@
 <?php
 /**
- * Environment detection for PHP Defender.
+ * Environment detection for AbodyStudio Shield.
  *
  * Read-only. Figures out the PHP version, how PHP runs (SAPI), the web
  * server, whether a proxy like Cloudflare is in front, which shield method
@@ -10,14 +10,14 @@
  * Deliberately has NO WordPress dependency so it can be unit-tested from the
  * CLI. Pass a $ctx array to override the live environment for testing.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Detect {
+class Abody_Detect {
 
 	/**
 	 * Fixed PHP release per branch (CVE-2026-109618 / -109619, "PHP2Shell").
@@ -128,20 +128,20 @@ class Phpdef_Detect {
 	}
 
 	protected function detect_server() {
-		$sw = $this->ctx( 'server_software', phpdef_server( 'SERVER_SOFTWARE', '' ) );
+		$sw = $this->ctx( 'server_software', abody_server( 'SERVER_SOFTWARE', '' ) );
 
 		$type  = 'unknown';
 		$label = 'Unknown';
-		if ( phpdef_str_contains( $sw, 'litespeed' ) ) {
+		if ( abody_str_contains( $sw, 'litespeed' ) ) {
 			$type  = 'litespeed';
 			$label = 'LiteSpeed';
-		} elseif ( phpdef_str_contains( $sw, 'apache' ) ) {
+		} elseif ( abody_str_contains( $sw, 'apache' ) ) {
 			$type  = 'apache';
 			$label = 'Apache';
-		} elseif ( phpdef_str_contains( $sw, 'nginx' ) ) {
+		} elseif ( abody_str_contains( $sw, 'nginx' ) ) {
 			$type  = 'nginx';
 			$label = 'NGINX';
-		} elseif ( phpdef_str_contains( $sw, 'microsoft-iis' ) || phpdef_str_contains( $sw, 'iis' ) ) {
+		} elseif ( abody_str_contains( $sw, 'microsoft-iis' ) || abody_str_contains( $sw, 'iis' ) ) {
 			$type  = 'iis';
 			$label = 'Microsoft IIS';
 		}
@@ -156,11 +156,11 @@ class Phpdef_Detect {
 	protected function detect_proxy() {
 		$cf = $this->ctx( 'cf', null );
 		if ( null === $cf ) {
-			$cf = ( '' !== phpdef_server( 'HTTP_CF_RAY', '' ) ) || ( '' !== phpdef_server( 'HTTP_CF_CONNECTING_IP', '' ) );
+			$cf = ( '' !== abody_server( 'HTTP_CF_RAY', '' ) ) || ( '' !== abody_server( 'HTTP_CF_CONNECTING_IP', '' ) );
 		}
 		$xff = $this->ctx( 'xff', null );
 		if ( null === $xff ) {
-			$xff = ( '' !== phpdef_server( 'HTTP_X_FORWARDED_FOR', '' ) );
+			$xff = ( '' !== abody_server( 'HTTP_X_FORWARDED_FOR', '' ) );
 		}
 
 		$label = 'None detected';
@@ -222,7 +222,7 @@ class Phpdef_Detect {
 		$up_raw  = $this->ctx( 'upload_progress', ini_get( 'session.upload_progress.enabled' ) );
 
 		$mem_ok = ( '-1' === trim( (string) $mem_raw ) );
-		$up_ok  = ! phpdef_ini_truthy( $up_raw );
+		$up_ok  = ! abody_ini_truthy( $up_raw );
 
 		return array(
 			'memory_limit'    => array(
@@ -231,7 +231,7 @@ class Phpdef_Detect {
 				'ok'      => $mem_ok,
 			),
 			'upload_progress' => array(
-				'current' => phpdef_ini_truthy( $up_raw ) ? 'on' : 'off',
+				'current' => abody_ini_truthy( $up_raw ) ? 'on' : 'off',
 				'target'  => 'off',
 				'ok'      => $up_ok,
 			),

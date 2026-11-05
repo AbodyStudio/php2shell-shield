@@ -1,6 +1,6 @@
 <?php
 /**
- * Uninstall cleanup for PHP Defender.
+ * Uninstall cleanup for AbodyStudio Shield.
  *
  * Removes the plugin's options. It intentionally does NOT remove any .htaccess
  * / .user.ini shield the user has turned on, because those protect the site and
@@ -8,30 +8,30 @@
  * shield, filter and lockdown OFF before deleting the plugin if you want them
  * removed.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-$phpdef_options = array(
-	'phpdef_version',
-	'phpdef_setup_done',
-	'phpdef_shield',
-	'phpdef_backup',
-	'phpdef_secrets_backup',
-	'phpdef_edge',
-	'phpdef_edge_allow',
-	'phpdef_edge_backup',
-	'phpdef_cf',
-	'phpdef_lock',
-	'phpdef_lock_backup',
-	'phpdef_scan_result',
-	'phpdef_phpcheck_result',
-	'phpdef_phpswitch_backup',
+$abody_options = array(
+	'abody_version',
+	'abody_setup_done',
+	'abody_shield',
+	'abody_backup',
+	'abody_secrets_backup',
+	'abody_edge',
+	'abody_edge_allow',
+	'abody_edge_backup',
+	'abody_cf',
+	'abody_lock',
+	'abody_lock_backup',
+	'abody_scan_result',
+	'abody_phpcheck_result',
+	'abody_phpswitch_backup',
 );
 
-foreach ( $phpdef_options as $phpdef_opt ) {
-	delete_option( $phpdef_opt );
+foreach ( $abody_options as $abody_opt ) {
+	delete_option( $abody_opt );
 }

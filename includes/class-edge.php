@@ -1,6 +1,6 @@
 <?php
 /**
- * Edge request filter for PHP Defender.
+ * Edge request filter for AbodyStudio Shield.
  *
  * CVE-2026-109619 is reached through multipart/form-data uploads (via
  * session.upload_progress). PHP's own advice for sites that do not need it is
@@ -12,22 +12,22 @@
  * It is surface reduction, not a precise exploit signature, and it CAN affect
  * front-end forms and uploads — so it is opt-in and the allowlist is editable.
  * The same rule can be applied three ways: Apache/LiteSpeed .htaccess (written
- * here), Cloudflare (via Phpdef_Cloudflare), or an nginx snippet (generated here).
+ * here), Cloudflare (via Abody_Cloudflare), or an nginx snippet (generated here).
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Edge {
+class Abody_Edge {
 
 	const LABEL = 'Filter';
 
-	/** @var Phpdef_Files */
+	/** @var Abody_Files */
 	protected $files;
 
 	/** @var array Detection report. */
@@ -37,7 +37,7 @@ class Phpdef_Edge {
 		if ( null === $base ) {
 			$base = defined( 'ABSPATH' ) ? ABSPATH : getcwd();
 		}
-		$this->files  = new Phpdef_Files( $base );
+		$this->files  = new Abody_Files( $base );
 		$this->report = is_array( $report ) ? $report : array();
 	}
 
@@ -48,7 +48,7 @@ class Phpdef_Edge {
 	}
 
 	public function allowlist() {
-		$a = phpdef_opt_get( 'phpdef_edge_allow' );
+		$a = abody_opt_get( 'abody_edge_allow' );
 		if ( is_array( $a ) ) {
 			return $a;
 		}
@@ -95,7 +95,7 @@ class Phpdef_Edge {
 		if ( empty( $clean ) ) {
 			$clean = $this->default_allowlist();
 		}
-		phpdef_opt_set( 'phpdef_edge_allow', $clean );
+		abody_opt_set( 'abody_edge_allow', $clean );
 		return $clean;
 	}
 
@@ -148,18 +148,18 @@ class Phpdef_Edge {
 	public function nginx_snippet() {
 		$allow = $this->allowlist();
 		$out   = array();
-		$out[] = '# PHP Defender — add inside your server { } block, then reload nginx.';
+		$out[] = '# AbodyStudio Shield — add inside your server { } block, then reload nginx.';
 		$out[] = '# Blocks multipart/form-data POSTs except on allowlisted paths.';
-		$out[] = 'set $phpdef_block 0;';
-		$out[] = 'if ($request_method = POST) { set $phpdef_block "${phpdef_block}1"; }';
-		$out[] = 'if ($http_content_type ~* multipart/form-data) { set $phpdef_block "${phpdef_block}2"; }';
+		$out[] = 'set $abody_block 0;';
+		$out[] = 'if ($request_method = POST) { set $abody_block "${abody_block}1"; }';
+		$out[] = 'if ($http_content_type ~* multipart/form-data) { set $abody_block "${abody_block}2"; }';
 		foreach ( $allow as $path ) {
 			// Escape for the nginx regex even though set_allowlist() already
 			// restricts the characters — defence in depth for the rule syntax.
-			$out[] = 'if ($uri ~* "^' . preg_quote( $path, '' ) . '") { set $phpdef_block "${phpdef_block}9"; }';
+			$out[] = 'if ($uri ~* "^' . preg_quote( $path, '' ) . '") { set $abody_block "${abody_block}9"; }';
 		}
 		$out[] = '# Block only when POST(1) + multipart(2) and no allow(9) matched:';
-		$out[] = 'if ($phpdef_block = "012") { return 403; }';
+		$out[] = 'if ($abody_block = "012") { return 403; }';
 		return implode( "\n", $out );
 	}
 
@@ -179,33 +179,33 @@ class Phpdef_Edge {
 			return array( 'ok' => false, 'reason' => 'cannot_write', 'snippet' => $this->nginx_snippet() );
 		}
 		$content = $this->files->read( '.htaccess' );
-		if ( null === phpdef_opt_get( 'phpdef_edge_backup' ) ) {
-			phpdef_opt_set( 'phpdef_edge_backup', array( 'existed' => $this->files->exists( '.htaccess' ) ? 1 : 0 ) );
+		if ( null === abody_opt_get( 'abody_edge_backup' ) ) {
+			abody_opt_set( 'abody_edge_backup', array( 'existed' => $this->files->exists( '.htaccess' ) ? 1 : 0 ) );
 		}
 		$new = $this->files->set_block( $content, $this->htaccess_lines(), '.htaccess', self::LABEL );
 		if ( ! $this->files->write( '.htaccess', $new ) ) {
 			return array( 'ok' => false, 'reason' => 'write_failed', 'snippet' => $this->nginx_snippet() );
 		}
-		phpdef_opt_set( 'phpdef_edge', array( 'active' => 1, 'at' => time() ) );
+		abody_opt_set( 'abody_edge', array( 'active' => 1, 'at' => time() ) );
 		return array( 'ok' => true );
 	}
 
 	public function disable_htaccess() {
 		$content  = $this->files->read( '.htaccess' );
 		$stripped = $this->files->strip_block( $content, self::LABEL );
-		$backup   = phpdef_opt_get( 'phpdef_edge_backup' );
+		$backup   = abody_opt_get( 'abody_edge_backup' );
 		if ( is_array( $backup ) && empty( $backup['existed'] ) && '' === trim( $stripped ) ) {
 			$this->files->delete( '.htaccess' );
 		} else {
 			$this->files->write( '.htaccess', $stripped );
 		}
-		phpdef_opt_set( 'phpdef_edge', array( 'active' => 0 ) );
-		phpdef_opt_delete( 'phpdef_edge_backup' );
+		abody_opt_set( 'abody_edge', array( 'active' => 0 ) );
+		abody_opt_delete( 'abody_edge_backup' );
 		return array( 'ok' => true );
 	}
 
 	public function is_active() {
-		$s = phpdef_opt_get( 'phpdef_edge' );
+		$s = abody_opt_get( 'abody_edge' );
 		return ( is_array( $s ) && ! empty( $s['active'] ) );
 	}
 }

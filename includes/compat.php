@@ -5,14 +5,14 @@
  * We cannot use str_starts_with / str_contains (PHP 8.0) or the null
  * coalescing operator, so the small helpers we need live here.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! function_exists( 'phpdef_str_contains' ) ) {
+if ( ! function_exists( 'abody_str_contains' ) ) {
 	/**
 	 * Case-insensitive "does haystack contain needle".
 	 *
@@ -20,7 +20,7 @@ if ( ! function_exists( 'phpdef_str_contains' ) ) {
 	 * @param string $needle   Needle.
 	 * @return bool
 	 */
-	function phpdef_str_contains( $haystack, $needle ) {
+	function abody_str_contains( $haystack, $needle ) {
 		if ( '' === $needle ) {
 			return true;
 		}
@@ -28,7 +28,7 @@ if ( ! function_exists( 'phpdef_str_contains' ) ) {
 	}
 }
 
-if ( ! function_exists( 'phpdef_server' ) ) {
+if ( ! function_exists( 'abody_server' ) ) {
 	/**
 	 * Safe read from $_SERVER with a default (no ?? on PHP 5.4).
 	 *
@@ -36,7 +36,7 @@ if ( ! function_exists( 'phpdef_server' ) ) {
 	 * @param mixed  $default Default.
 	 * @return mixed
 	 */
-	function phpdef_server( $key, $default = '' ) {
+	function abody_server( $key, $default = '' ) {
 		if ( ! isset( $_SERVER[ $key ] ) ) {
 			return $default;
 		}
@@ -59,7 +59,7 @@ if ( ! defined( 'OPENSSL_ALGO_SHA256' ) ) {
 	define( 'OPENSSL_ALGO_SHA256', 7 );
 }
 
-if ( ! function_exists( 'phpdef_random_string' ) ) {
+if ( ! function_exists( 'abody_random_string' ) ) {
 	/**
 	 * A cryptographically random string from a quote-safe charset, using the
 	 * best source available (random_bytes on PHP 7+, else OpenSSL, else a
@@ -69,7 +69,7 @@ if ( ! function_exists( 'phpdef_random_string' ) ) {
 	 * @param int $len Length.
 	 * @return string
 	 */
-	function phpdef_random_string( $len = 64 ) {
+	function abody_random_string( $len = 64 ) {
 		$chars = '';
 		for ( $i = 33; $i <= 126; $i++ ) {
 			$c = chr( $i );
@@ -119,7 +119,7 @@ if ( ! function_exists( 'phpdef_random_string' ) ) {
 	}
 }
 
-if ( ! function_exists( 'phpdef_hash_equals' ) ) {
+if ( ! function_exists( 'abody_hash_equals' ) ) {
 	/**
 	 * Constant-time string compare. Uses hash_equals (PHP 5.6+) when available,
 	 * else a constant-time fallback for PHP 5.4/5.5.
@@ -128,7 +128,7 @@ if ( ! function_exists( 'phpdef_hash_equals' ) ) {
 	 * @param string $given User-supplied string.
 	 * @return bool
 	 */
-	function phpdef_hash_equals( $known, $given ) {
+	function abody_hash_equals( $known, $given ) {
 		if ( function_exists( 'hash_equals' ) ) {
 			// phpcs:ignore PHPCompatibility.FunctionUse.NewFunctions.hash_equalsFound -- guarded by function_exists; the fallback below covers PHP < 5.6.
 			return hash_equals( (string) $known, (string) $given );
@@ -147,38 +147,38 @@ if ( ! function_exists( 'phpdef_hash_equals' ) ) {
 	}
 }
 
-if ( ! function_exists( 'phpdef_opt_get' ) ) {
+if ( ! function_exists( 'abody_opt_get' ) ) {
 	/**
 	 * Option storage that uses WordPress when present, else an in-memory store
 	 * (for CLI testing). All plugin classes share this so state is consistent.
 	 */
-	function phpdef_opt_get( $k ) {
+	function abody_opt_get( $k ) {
 		if ( function_exists( 'get_option' ) ) {
 			$v = get_option( $k );
 			return ( false === $v ) ? null : $v;
 		}
-		return isset( $GLOBALS['__phpdef_mem'][ $k ] ) ? $GLOBALS['__phpdef_mem'][ $k ] : null;
+		return isset( $GLOBALS['__abody_mem'][ $k ] ) ? $GLOBALS['__abody_mem'][ $k ] : null;
 	}
-	function phpdef_opt_set( $k, $v ) {
+	function abody_opt_set( $k, $v ) {
 		if ( function_exists( 'update_option' ) ) {
 			update_option( $k, $v );
 			return;
 		}
-		if ( ! isset( $GLOBALS['__phpdef_mem'] ) ) {
-			$GLOBALS['__phpdef_mem'] = array();
+		if ( ! isset( $GLOBALS['__abody_mem'] ) ) {
+			$GLOBALS['__abody_mem'] = array();
 		}
-		$GLOBALS['__phpdef_mem'][ $k ] = $v;
+		$GLOBALS['__abody_mem'][ $k ] = $v;
 	}
-	function phpdef_opt_delete( $k ) {
+	function abody_opt_delete( $k ) {
 		if ( function_exists( 'delete_option' ) ) {
 			delete_option( $k );
 			return;
 		}
-		unset( $GLOBALS['__phpdef_mem'][ $k ] );
+		unset( $GLOBALS['__abody_mem'][ $k ] );
 	}
 }
 
-if ( ! function_exists( 'phpdef_remote_addr' ) ) {
+if ( ! function_exists( 'abody_remote_addr' ) ) {
 	/**
 	 * The IP the web server actually matches on (REMOTE_ADDR). Behind a proxy
 	 * like Cloudflare this is the proxy's IP, which is why server-level IP rules
@@ -186,13 +186,13 @@ if ( ! function_exists( 'phpdef_remote_addr' ) ) {
 	 *
 	 * @return string
 	 */
-	function phpdef_remote_addr() {
-		$ip = phpdef_server( 'REMOTE_ADDR', '' );
+	function abody_remote_addr() {
+		$ip = abody_server( 'REMOTE_ADDR', '' );
 		return preg_replace( '/[^0-9a-fA-F:\.]/', '', (string) $ip );
 	}
 }
 
-if ( ! function_exists( 'phpdef_real_ip' ) ) {
+if ( ! function_exists( 'abody_real_ip' ) ) {
 	/**
 	 * The real visitor IP: Cloudflare's CF-Connecting-IP when present, else
 	 * REMOTE_ADDR. Use this for Cloudflare-side rules (ip.src), never for
@@ -200,28 +200,28 @@ if ( ! function_exists( 'phpdef_real_ip' ) ) {
 	 *
 	 * @return string
 	 */
-	function phpdef_real_ip() {
-		$cf = phpdef_server( 'HTTP_CF_CONNECTING_IP', '' );
+	function abody_real_ip() {
+		$cf = abody_server( 'HTTP_CF_CONNECTING_IP', '' );
 		if ( '' !== $cf ) {
 			return preg_replace( '/[^0-9a-fA-F:\.]/', '', (string) $cf );
 		}
-		return phpdef_remote_addr();
+		return abody_remote_addr();
 	}
 }
 
-if ( ! function_exists( 'phpdef_is_ip' ) ) {
+if ( ! function_exists( 'abody_is_ip' ) ) {
 	/**
 	 * Validate an IPv4 or IPv6 address.
 	 *
 	 * @param string $ip IP.
 	 * @return bool
 	 */
-	function phpdef_is_ip( $ip ) {
+	function abody_is_ip( $ip ) {
 		return (bool) filter_var( $ip, FILTER_VALIDATE_IP );
 	}
 }
 
-if ( ! function_exists( 'phpdef_secret_key' ) ) {
+if ( ! function_exists( 'abody_secret_key' ) ) {
 	/**
 	 * A per-site key for light obfuscation of stored secrets. Uses WP salts
 	 * when available. This is obfuscation, not strong encryption (libsodium is
@@ -230,7 +230,7 @@ if ( ! function_exists( 'phpdef_secret_key' ) ) {
 	 *
 	 * @return string
 	 */
-	function phpdef_secret_key() {
+	function abody_secret_key() {
 		if ( defined( 'AUTH_SALT' ) && AUTH_SALT ) {
 			return hash( 'sha256', 'p2s|' . AUTH_SALT );
 		}
@@ -241,15 +241,15 @@ if ( ! function_exists( 'phpdef_secret_key' ) ) {
 	}
 }
 
-if ( ! function_exists( 'phpdef_obfuscate' ) ) {
+if ( ! function_exists( 'abody_obfuscate' ) ) {
 	/**
 	 * Reversibly obfuscate a short secret (XOR with the site key, base64).
 	 *
 	 * @param string $plain Secret.
 	 * @return string
 	 */
-	function phpdef_obfuscate( $plain ) {
-		$key = phpdef_secret_key();
+	function abody_obfuscate( $plain ) {
+		$key = abody_secret_key();
 		$kl  = strlen( $key );
 		$out = '';
 		$pl  = strlen( $plain );
@@ -260,17 +260,17 @@ if ( ! function_exists( 'phpdef_obfuscate' ) ) {
 	}
 
 	/**
-	 * Reverse phpdef_obfuscate().
+	 * Reverse abody_obfuscate().
 	 *
 	 * @param string $blob Obfuscated string.
 	 * @return string
 	 */
-	function phpdef_deobfuscate( $blob ) {
+	function abody_deobfuscate( $blob ) {
 		$raw = base64_decode( (string) $blob, true );
 		if ( false === $raw ) {
 			return '';
 		}
-		$key = phpdef_secret_key();
+		$key = abody_secret_key();
 		$kl  = strlen( $key );
 		$out = '';
 		$rl  = strlen( $raw );
@@ -281,7 +281,7 @@ if ( ! function_exists( 'phpdef_obfuscate' ) ) {
 	}
 }
 
-if ( ! function_exists( 'phpdef_ini_truthy' ) ) {
+if ( ! function_exists( 'abody_ini_truthy' ) ) {
 	/**
 	 * Is a php.ini flag effectively ON?
 	 *
@@ -290,7 +290,7 @@ if ( ! function_exists( 'phpdef_ini_truthy' ) ) {
 	 * @param string $value Raw ini_get value.
 	 * @return bool
 	 */
-	function phpdef_ini_truthy( $value ) {
+	function abody_ini_truthy( $value ) {
 		if ( false === $value || null === $value ) {
 			return false;
 		}
@@ -302,7 +302,7 @@ if ( ! function_exists( 'phpdef_ini_truthy' ) ) {
 	}
 }
 
-if ( ! function_exists( 'phpdef_ini_bytes' ) ) {
+if ( ! function_exists( 'abody_ini_bytes' ) ) {
 	/**
 	 * Parse a php.ini shorthand byte value ("32M", "128K", "1G", "-1") to bytes.
 	 *
@@ -312,7 +312,7 @@ if ( ! function_exists( 'phpdef_ini_bytes' ) ) {
 	 * @param string|int $value Raw ini value.
 	 * @return int Bytes (PHP_INT_MAX for unlimited).
 	 */
-	function phpdef_ini_bytes( $value ) {
+	function abody_ini_bytes( $value ) {
 		$v = trim( (string) $value );
 		if ( '' === $v || '-1' === $v ) {
 			return PHP_INT_MAX;

@@ -1,6 +1,6 @@
 <?php
 /**
- * Safe config-file editing for PHP Defender.
+ * Safe config-file editing for AbodyStudio Shield.
  *
  * Only ever touches a block between our own sentinels, so the rest of the
  * user's file is never disturbed. Writes atomically (temp file + rename) so a
@@ -9,17 +9,17 @@
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Files {
+class Abody_Files {
 
-	const BEGIN = 'BEGIN PHP Defender';
-	const END   = 'END PHP Defender';
+	const BEGIN = 'BEGIN AbodyStudio Shield';
+	const END   = 'END AbodyStudio Shield';
 
 	/**
 	 * Base directory we are allowed to write into (normally ABSPATH).

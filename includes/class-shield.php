@@ -15,16 +15,16 @@
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Shield {
+class Abody_Shield {
 
-	/** @var Phpdef_Files */
+	/** @var Abody_Files */
 	protected $files;
 
 	/** @var array Detection report. */
@@ -50,7 +50,7 @@ class Phpdef_Shield {
 			$base = defined( 'ABSPATH' ) ? ABSPATH : getcwd();
 		}
 		$this->base   = $base;
-		$this->files  = new Phpdef_Files( $base );
+		$this->files  = new Abody_Files( $base );
 		$this->report = ( null === $report ) ? $this->fresh_report() : $report;
 		if ( is_array( $ini_map ) && ! empty( $ini_map ) ) {
 			$this->ini_map = $ini_map;
@@ -76,7 +76,7 @@ class Phpdef_Shield {
 	 */
 	protected function effective_pairs() {
 		if ( $this->is_active() ) {
-			$state = $this->opt_get( 'phpdef_shield' );
+			$state = $this->opt_get( 'abody_shield' );
 			if ( is_array( $state ) && isset( $state['applied_ini'] ) && is_array( $state['applied_ini'] ) && ! empty( $state['applied_ini'] ) ) {
 				return $state['applied_ini'];
 			}
@@ -102,7 +102,7 @@ class Phpdef_Shield {
 	}
 
 	protected function fresh_report() {
-		$d = new Phpdef_Detect();
+		$d = new Abody_Detect();
 		return $d->run();
 	}
 
@@ -236,9 +236,9 @@ class Phpdef_Shield {
 		$existed  = $this->files->exists( $file );
 
 		// Back up the original content once (in the DB, not a stray file).
-		if ( null === $this->opt_get( 'phpdef_backup' ) ) {
+		if ( null === $this->opt_get( 'abody_backup' ) ) {
 			$this->opt_set(
-				'phpdef_backup',
+				'abody_backup',
 				array(
 					'file'    => $file,
 					'existed' => $existed ? 1 : 0,
@@ -262,7 +262,7 @@ class Phpdef_Shield {
 		}
 
 		$this->opt_set(
-			'phpdef_shield',
+			'abody_shield',
 			array(
 				'active'      => 1,
 				'method'      => $method,
@@ -282,13 +282,13 @@ class Phpdef_Shield {
 	 * @return array
 	 */
 	public function disable() {
-		$state = $this->opt_get( 'phpdef_shield' );
+		$state = $this->opt_get( 'abody_shield' );
 		if ( ! is_array( $state ) || empty( $state['active'] ) ) {
 			return array( 'ok' => true, 'noop' => true );
 		}
 
 		$file   = $state['file'];
-		$backup = $this->opt_get( 'phpdef_backup' );
+		$backup = $this->opt_get( 'abody_backup' );
 
 		$current  = $this->files->read( $file );
 		$stripped = $this->files->strip_block( $current );
@@ -302,8 +302,8 @@ class Phpdef_Shield {
 			$this->files->write( $file, $stripped );
 		}
 
-		$this->opt_set( 'phpdef_shield', array( 'active' => 0 ) );
-		$this->opt_delete( 'phpdef_backup' );
+		$this->opt_set( 'abody_shield', array( 'active' => 0 ) );
+		$this->opt_delete( 'abody_backup' );
 
 		return array( 'ok' => true );
 	}
@@ -333,10 +333,10 @@ class Phpdef_Shield {
 		$up_target  = isset( $pairs['session.upload_progress.enabled'] ) ? $pairs['session.upload_progress.enabled'] : '0';
 
 		$mem_ok = ( trim( (string) $live['memory_limit'] ) === trim( (string) $mem_target ) );
-		$up_ok  = ( phpdef_ini_truthy( $live['upload_progress'] ) === phpdef_ini_truthy( $up_target ) );
+		$up_ok  = ( abody_ini_truthy( $live['upload_progress'] ) === abody_ini_truthy( $up_target ) );
 		$all_ok = ( $mem_ok && $up_ok );
 
-		$state = $this->opt_get( 'phpdef_shield' );
+		$state = $this->opt_get( 'abody_shield' );
 		if ( ! is_array( $state ) || empty( $state['active'] ) ) {
 			return array(
 				'active'  => false,
@@ -370,7 +370,7 @@ class Phpdef_Shield {
 	}
 
 	public function is_active() {
-		$state = $this->opt_get( 'phpdef_shield' );
+		$state = $this->opt_get( 'abody_shield' );
 		return ( is_array( $state ) && ! empty( $state['active'] ) );
 	}
 
@@ -396,14 +396,14 @@ class Phpdef_Shield {
 	/* ---- option storage (WP or in-memory for tests) -------------------- */
 
 	protected function opt_get( $k ) {
-		return phpdef_opt_get( $k );
+		return abody_opt_get( $k );
 	}
 
 	protected function opt_set( $k, $v ) {
-		phpdef_opt_set( $k, $v );
+		abody_opt_set( $k, $v );
 	}
 
 	protected function opt_delete( $k ) {
-		phpdef_opt_delete( $k );
+		abody_opt_delete( $k );
 	}
 }

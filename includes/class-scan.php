@@ -1,6 +1,6 @@
 <?php
 /**
- * Breach check for PHP Defender.
+ * Breach check for AbodyStudio Shield.
  *
  * PHP2Shell runs as the web user and exploitation started before the patch, so
  * a share of sites are already compromised. This looks for the signs:
@@ -18,14 +18,14 @@
  * The comparison/parse helpers are pure and WordPress-independent so they can
  * be tested from the CLI; the gather steps use WordPress and are guarded.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Scan {
+class Abody_Scan {
 
 	/** @var string */
 	protected $base;

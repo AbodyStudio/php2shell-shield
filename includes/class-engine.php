@@ -1,6 +1,6 @@
 <?php
 /**
- * Rule-pack engine for PHP Defender.
+ * Rule-pack engine for AbodyStudio Shield.
  *
  * A rule pack is a signed JSON file describing one threat: which PHP versions
  * are fixed, which mitigations apply, and plain advice. The engine verifies a
@@ -14,14 +14,14 @@
  *
  * WordPress-independent so it can be tested from the CLI.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Engine {
+class Abody_Engine {
 
 	/** @var string Directory holding the built-in packs + public key. */
 	protected $builtin_dir;
@@ -42,7 +42,7 @@ class Phpdef_Engine {
 	 */
 	public function __construct( $builtin_dir = null, $installed_dir = null, $pubkey_pem = null ) {
 		if ( null === $builtin_dir ) {
-			$builtin_dir = defined( 'PHPDEF_DIR' ) ? PHPDEF_DIR . 'packs/' : getcwd() . '/packs/';
+			$builtin_dir = defined( 'ABODY_DIR' ) ? ABODY_DIR . 'packs/' : getcwd() . '/packs/';
 		}
 		$this->builtin_dir   = rtrim( $builtin_dir, '/\\' ) . '/';
 		$this->installed_dir = $installed_dir ? rtrim( $installed_dir, '/\\' ) . '/' : '';
@@ -248,7 +248,7 @@ class Phpdef_Engine {
 						? $post_max_current
 						: ini_get( $c['setting'] );
 					// Skip unless the pack value is strictly smaller (a real tighten).
-					if ( phpdef_ini_bytes( $current ) <= phpdef_ini_bytes( $c['value'] ) ) {
+					if ( abody_ini_bytes( $current ) <= abody_ini_bytes( $c['value'] ) ) {
 						continue;
 					}
 				}

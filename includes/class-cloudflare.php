@@ -1,6 +1,6 @@
 <?php
 /**
- * Minimal Cloudflare client for PHP Defender.
+ * Minimal Cloudflare client for AbodyStudio Shield.
  *
  * Deploys the edge filter (and an optional lockdown) as custom firewall rules
  * in the zone's http_request_firewall_custom ruleset. Rule management is
@@ -11,14 +11,14 @@
  * The HTTP transport is injectable so the request-building logic can be tested
  * without a live account or network.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Phpdef_Cloudflare {
+class Abody_Cloudflare {
 
 	const API   = 'https://api.cloudflare.com/client/v4';
 	const PHASE = 'http_request_firewall_custom';
@@ -131,7 +131,7 @@ class Phpdef_Cloudflare {
 		$rules[] = array(
 			'action'      => $action,
 			'expression'  => $expression,
-			'description' => 'PHP Defender ' . $marker,
+			'description' => 'AbodyStudio Shield ' . $marker,
 			'enabled'     => true,
 		);
 		$r = $this->http( 'PUT', $this->entrypoint_url(), array( 'rules' => $rules ) );

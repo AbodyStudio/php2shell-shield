@@ -1,6 +1,6 @@
 <?php
 /**
- * Sign a rule pack for PHP Defender.
+ * Sign a rule pack for AbodyStudio Shield.
  *
  * Produces a detached RSA-SHA256 signature (base64) over the EXACT bytes of
  * the pack .json file. The plugin verifies those same bytes against the
@@ -13,7 +13,7 @@
  *
  * The private key must NEVER be committed or shipped in the plugin zip.
  *
- * @package PHP_Defender
+ * @package AbodyStudio_Shield
  */
 
 if ( PHP_SAPI !== 'cli' ) {
